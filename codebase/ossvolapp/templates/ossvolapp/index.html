@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Django uni</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'ossvolapp/images/favicon.ico' %}" />
+    <link rel="stylesheet" href="{% static 'ossvolapp/css/ossvol.css' %}">
+</head>
+<body>
+    <h1>Hello, work in progress ossvol</h1>
+
+    <div>
+        <p>Current date from Oracle Database: <br> {{ result }}</p>
+        <a href="{% url 'index' %}">
+            <button type="button">Refresh</button>
+        </a>
+    </div>
+
+    <hr>
+    <div>
+        <h2>Upload an Image</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="image">
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+    <hr>
+    <div>
+        <h2>Uploaded Images</h2>
+        {% if images %}
+            {% for image_url in images %}
+                <img src="{{ image_url }}" alt="Uploaded Image" style="max-height: 150px; max-width: 200px; object-fit: contain; margin: 10px;">
+            {% endfor %}
+        {% else %}
+        <p>No images uploaded yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
