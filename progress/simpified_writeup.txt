@@ -1,0 +1,138 @@
+17/12/2024
+Find a good ERD tool instead of Draw.io or excel.
+Create the initial ERD and base DDLs
+
+Parts of wireframe using www.canva.com, pro license
+
+18/12/2024
+#####################################################################################
+# prior linux one time settings from the prototype that are used for the final app: #
+#####################################################################################
+# enabling local connects that is by default restricted on the linux distribution
+setsebool -P httpd_can_network_connect 1
+setsebool -P httpd_can_network_relay 1
+setsebool -P httpd_can_network_connect_db 1
+
+# create swap file to deal with limited memory on always free instance
+sudo fallocate -l 3G /swapfile
+# set permission
+sudo chmod 600 /swapfile
+# make it a swap file
+sudo mkswap /swapfile
+# enable it
+sudo swapon /swapfile
+# make it permanent
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+
+# Oracle client installation:
+# Download oracle client, below link is for Oracle linux 9 I am using
+# https://download.oracle.com/otn_software/linux/instantclient/2360000/oracle-instantclient-basic-23.6.0.24.10-1.el9.x86_64.rpm
+# in the folder I downloaded it, executed:
+sudo yum install -y oracle-instantclient-basic-23.6.0.24.10-1.el9.x86_64.rpm
+
+# NGINX installation:
+sudo yum install -y oracle-epel-release-el9
+sudo yum install -y nginx
+
+# NGINX file upload limit:
+client_max_body_size 10M;
+
+# Enable firewall
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+
+#installing pip3:
+sudo dnf install -y python3-pip
+
+# preparing for python virtual environments
+pip3 install virtualenvwrapper
+
+# add virtual envs to .bashrc so they load automatically
+export WORKON_HOME=$HOME/.virtualenvs
+source /home/opc/.local/bin/virtualenvwrapper.sh
+
+###############################
+# new work for the final app: #
+###############################
+# upgrade pyton to 3.12.5
+sudo dnf config-manager --enable ol9_appstream ol9_baseos_latest
+sudo dnf config-manager --enable ol9_codeready_builder
+sudo dnf install -y python3.12 python3.12-venv python3.12-devel
+sudo dnf install -y gcc libffi-devel python3.12-devel
+sudo ln -sf /usr/bin/python3.12 /usr/bin/python3
+sudo ln -sf /usr/bin/python3.12 /usr/bin/python
+
+# add packages to the new python version
+sudo dnf install -y python3-pip
+# fixing pip
+python3.12 -m ensurepip --upgrade
+
+# Set up Virtual environment
+mkvirtualenv ossvol
+workon ossvol
+pip install gunicorn
+pip install django==5.0.7
+pip install whitenoise
+pip install cx-Oracle
+
+#the below will install the directory at current path!!!!
+django-admin startproject ossvolsite   
+cd ossvolsite
+python manage.py startapp ossvolapp
+
+# modify settings.py, relying on the feature protoype settings.py. Can't copy as feature prototype used older django version.
+Add allowed hosts
+Whitenoise
+template folders
+statis file folder
+database connection
+file size limit
+
+# modify ossvolsite urls.py
+add ossvolapp.urls
+
+# oosvolapp folder
+add urls.py with reference to index
+
+# views.py
+copy-paste the feature prototype view, update path from prototype to final
+
+# static folder
+copy-paste the feature prototype static folder, update folder name and css filename from prototype to final
+
+# template folder and index.html
+copy-paste the feature prototype template folder, update folder name and index.html from prototype to final
+
+# collect static files
+python manage.py collectstatic
+
+# fix folder access rights
+sudo chcon -R -t httpd_sys_content_t /home/opc/ossvolsite/staticfiles
+
+# start gunicorn
+gunicorn --workers 3 ossvolsite.wsgi:application &
+
+# stop / start nginx to pick up new files
+sudo systemctl stop nginx
+sudo systemctl start nginx
+
+19/12/2024
+
+# install certbot
+Turns out Let's encrypt does not support certs for IP only. Need to go separate way.
+
+sudo mkdir -p /etc/ssl/private
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/nginx-selfsigned.key \
+    -out /etc/ssl/certs/nginx-selfsigned.crt
+
+sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+#edit the nginx config to add the ssl
+
+Turns out since it is self-signed, browsers do not accept trust. 
+For now, I stick with it and maybe later I will use my parctice domain to point to this.
+
+# started to see invalid requests coming in from unkown source
+modifiex nginx config to drop those connections so it does not get to django. Security enhancment
