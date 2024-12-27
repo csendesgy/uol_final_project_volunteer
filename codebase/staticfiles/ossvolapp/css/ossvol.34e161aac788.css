@@ -1,0 +1,172 @@
+/* ossvol.css */
+body {
+    font-family: 'Arial, sans-serif';
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+}
+
+h1, h2, h3 {
+    margin: 0;
+}
+
+h1 {
+    color: green;
+    font-family: 'Arial, sans-serif';
+    text-align: center;
+}
+
+h2 {
+    color: #333;
+    font-size: 1.5rem;
+}
+
+h3 {
+    color: #555;
+    font-size: 1.2rem;
+}
+
+/* Header Styles */
+#header {
+    margin: 0;
+    padding: 20px;
+    background-color: #7CDDEE;
+    color: black;
+    text-align: center;
+    font-size: 1.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+#application_title {
+    font-family: 'Comic Sans MS', cursive;
+    text-shadow: 2px 2px 3px #ccc;
+}
+
+#title_warning{
+	color: red;
+    font-weight: bold;
+}
+
+/* Navigation Bar */
+.menu {
+    display: flex; /* Use flexbox for horizontal alignment */
+    justify-content: space-between; /* Space items evenly across the container */
+    align-items: center; /* Vertically center items */
+    background-color: #F0EDEA; /* Gray background */
+    padding: 10px 20px; /* Add padding for spacing */
+    width: 100%; /* Ensure it stretches across the screen */
+    border-bottom: 1px solid #ddd; /* Add a subtle border at the bottom */
+    box-sizing: border-box; /* Include padding in the element's width/height */
+}
+
+.navbar-nav {
+    display: flex; /* Use flexbox for horizontal alignment within the menu */
+    list-style: none; /* Remove bullet points */
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+}
+
+.navbar-nav .nav-item {
+    margin: 0 10px; /* Add spacing between nav items */
+}
+
+.navbar-nav .nav-link {
+    text-decoration: none; /* Remove underline from links */
+    padding: 10px 15px; /* Add padding for a button-like appearance */
+    background-color: #cce7ff; /* Light blue background for buttons */
+    border-radius: 5px; /* Rounded corners for buttons */
+    font-size: 1rem; /* Font size for buttons */
+    color: #333; /* Text color */
+    display: inline-block; /* Ensure nav items are inline */
+    text-align: center; /* Center-align text within buttons */
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: #99d6ff; /* Slightly darker blue on hover */
+}
+
+/* Layout Sections */
+.container-fluid {
+    max-width: 1200px;
+    margin: 0;
+}
+
+.gray-section {
+    background-color: #F0EDEA;
+    padding: 0;
+}
+
+.white-section {
+    background-color: #ffffff;
+    padding: 0;
+}
+
+.welcome-box {
+    background-color: #F0EDEA;
+    padding: 20px;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Event Cards */
+.event-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #fff;
+}
+
+.event-card h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.event-card p {
+    margin: 5px 0;
+    color: #555;
+}
+
+/* Footer */
+#footer {
+    text-align: center;
+    padding: 15px;
+    background-color: #7CDDEE;
+    color: #333;
+    border-top: 1px solid #ddd;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: #777;
+}
+
+.margin-auto {
+    margin: auto;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar-nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .navbar-nav .nav-item {
+        margin: 5px 0;
+    }
+
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .event-card {
+        padding: 15px;
+    }
+}

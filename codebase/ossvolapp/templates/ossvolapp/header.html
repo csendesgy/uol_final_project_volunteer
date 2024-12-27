@@ -1,0 +1,47 @@
+{% load bootstrap4 %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="One-stop shop for volunteering">
+        <meta name="author" content="Gyula Henrik Csendes">
+        <meta name="keywords" content="volunteer, volunteering">
+        <link rel="shortcut icon" type="image/png" href="{% static 'ossvolapp/images/favicon.ico' %}"/>
+
+        {% bootstrap_css %}
+        {% bootstrap_javascript jquery='full' %}
+		<link rel="stylesheet" href="{% static 'ossvolapp/css/ossvol.css' %}">
+
+		<nav class="navbar navbar-expand-md sticky-top flex-column">
+			<div class="w-100 d-flex" id="header">
+				<div class="navbar-header">
+					{% include "./title.html" %}
+				</div>
+			</div>
+			<div class="w-100 d-flex justify-content-between">
+				<ul class="navbar-nav" id="navigation1">
+					<li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+				</ul>
+				<ul class="navbar-nav" id="navigation2">
+					{% if user.is_authenticated %}
+					<li class="nav-item"><a class="nav-link" href="#">Welcome {{ user.username }}</a></li>
+					{% endif %}
+				</ul>
+				<ul class="navbar-nav" id="navigation3">
+					{% if user.is_authenticated %}
+					<li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+					{% else %}
+					<li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+					<li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Log in</a></li>
+					{% endif %}
+				</ul>
+			</div>
+		</nav>
+
+    </head>
+
+    <body>
+
+
+

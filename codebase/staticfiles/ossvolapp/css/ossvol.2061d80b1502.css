@@ -1,0 +1,91 @@
+/* ossvol.css */
+h1 {
+    color: green;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+
+#header {
+    background-color: #add8e6;
+    color: black;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.5rem;
+}
+
+#application_title {
+    font-family: 'Comic Sans MS', cursive;
+    text-shadow: 2px 2px 3px #ccc;
+}
+
+.navbar-nav {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 10px;
+}
+
+.navbar-nav .nav-item .nav-link {
+    text-decoration: none;
+    padding: 10px 15px;
+    margin: 5px;
+    background-color: #cce7ff;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.navbar-nav .nav-item .nav-link:hover {
+    background-color: #99d6ff;
+}
+
+.container-fluid {
+    max-width: 1200px;
+    margin: auto;
+}
+
+h2 {
+    color: #333;
+    font-size: 1.5rem;
+}
+
+#ind_left_panel {
+    padding: 15px;
+    background-color: #fafafa;
+    border-right: 2px solid #ddd;
+}
+
+#ind_main_content {
+    padding: 15px;
+}
+
+.event-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #fff;
+}
+
+.event-card h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.event-card p {
+    margin: 5px 0;
+    color: #555;
+}
+
+#footer {
+    text-align: center;
+    padding: 15px;
+    background-color: #add8e6;
+    color: #333;
+}

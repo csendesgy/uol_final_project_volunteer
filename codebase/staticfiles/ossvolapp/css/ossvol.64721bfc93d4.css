@@ -16,21 +16,17 @@ body {
     font-size: 1.5rem;
     border-bottom: 1px solid #ddd;
 }
-/* Title */
+
 #application_title {
     font-family: 'Comic Sans MS', cursive;
     text-shadow: 2px 2px 3px #ccc;
     color: black;
 }
-#title_warning{
-    color: red;
-    font-weight: bold;
-}
 
 /* Navigation Bar */
 .navbar {
     width: 100%;
-    background-color: #F0EDEA; 
+    background-color: #F0EDEA; /* Light gray background */
     padding: 10px;
     border-bottom: 1px solid #ddd;
 }
@@ -44,17 +40,14 @@ body {
 
 #navigation1 {
     justify-content: flex-start; /* Left-aligned */
-	padding-top: 5px;
 }
 
 #navigation2 {
     justify-content: center; /* Center-aligned */
-	padding-top: 5px;
 }
 
 #navigation3 {
     justify-content: flex-end; /* Right-aligned */
-	padding-top: 5px;
 }
 
 .navbar-nav .nav-item {
@@ -64,17 +57,18 @@ body {
 .navbar-nav .nav-link {
     text-decoration: none;
     padding: 10px 15px;
-    background-color: #7CDDEE; 
+    background-color: #cce7ff; /* Light blue button background */
     border-radius: 5px;
     font-size: 1rem;
-    color: #333; 
+    color: #333; /* Button text color */
     font-weight: bold;
     text-align: center;
 }
 
 .navbar-nav .nav-link:hover {
-    background-color: #CCE7FF; 
+    background-color: #99d6ff; /* Slightly darker blue on hover */
 }
+
 
 /* Layout Sections */
 .container-fluid {

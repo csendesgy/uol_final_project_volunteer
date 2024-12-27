@@ -1,0 +1,14 @@
+{% include "./header.html" %}
+{% load static %}
+	<div class="container-fluid">
+		<div class="row">
+			<!-- Main Content Area -->
+			<div class="col-12" id="ind_main_content">
+				{% block content %}
+				No content
+				{% endblock %}
+			</div>
+		</div>
+	</div>
+{% include "./footer.html" %}
+

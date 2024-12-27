@@ -1,80 +1,54 @@
 /* ossvol.css */
-/* General Styles */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #ffffff;
+    font-family: 'Arial, sans-serif';
     margin: 0;
     padding: 0;
+    background-color: #ffffff;
 }
 
-/* Header */
+h1, h2, h3 {
+    margin: 0;
+}
+
+h1 {
+    color: green;
+    font-family: 'Arial, sans-serif';
+    text-align: center;
+}
+
+h2 {
+    color: #333;
+    font-size: 1.5rem;
+}
+
+h3 {
+    color: #555;
+    font-size: 1.2rem;
+}
+
+/* Header Styles */
 #header {
-    background-color: #7CDDEE;
+    margin: 0;
     padding: 20px;
+    background-color: #7CDDEE;
     color: black;
     text-align: center;
     font-size: 1.5rem;
     border-bottom: 1px solid #ddd;
 }
-/* Title */
+
 #application_title {
     font-family: 'Comic Sans MS', cursive;
     text-shadow: 2px 2px 3px #ccc;
-    color: black;
 }
+
 #title_warning{
-    color: red;
+	color: red;
     font-weight: bold;
 }
 
 /* Navigation Bar */
-.navbar {
-    width: 100%;
-    background-color: #F0EDEA; 
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
 
-.navbar-nav {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-#navigation1 {
-    justify-content: flex-start; /* Left-aligned */
-	padding-top: 5px;
-}
-
-#navigation2 {
-    justify-content: center; /* Center-aligned */
-	padding-top: 5px;
-}
-
-#navigation3 {
-    justify-content: flex-end; /* Right-aligned */
-	padding-top: 5px;
-}
-
-.navbar-nav .nav-item {
-    margin: 0 10px; /* Add spacing between items */
-}
-
-.navbar-nav .nav-link {
-    text-decoration: none;
-    padding: 10px 15px;
-    background-color: #7CDDEE; 
-    border-radius: 5px;
-    font-size: 1rem;
-    color: #333; 
-    font-weight: bold;
-    text-align: center;
-}
-
-.navbar-nav .nav-link:hover {
-    background-color: #CCE7FF; 
-}
 
 /* Layout Sections */
 .container-fluid {
