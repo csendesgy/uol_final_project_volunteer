@@ -33,8 +33,6 @@ body {
     background-color: #F0EDEA; 
     padding: 10px;
     border-bottom: 1px solid #ddd;
-    margin: 0; /* Remove any margin */
-    box-sizing: border-box;
 }
 
 .navbar-nav {
@@ -42,6 +40,21 @@ body {
     list-style: none;
     margin: 0;
     padding: 0;
+}
+
+#navigation1 {
+    justify-content: flex-start; /* Left-aligned */
+	padding-top: 5px;
+}
+
+#navigation2 {
+    justify-content: center; /* Center-aligned */
+	padding-top: 5px;
+}
+
+#navigation3 {
+    justify-content: flex-end; /* Right-aligned */
+	padding-top: 5px;
 }
 
 .navbar-nav .nav-item {
@@ -61,21 +74,6 @@ body {
 
 .navbar-nav .nav-link:hover {
     background-color: #CCE7FF; 
-}
-
-#navigation1 {
-    justify-content: flex-start; /* Left-aligned */
-	padding-top: 5px;
-}
-
-#navigation2 {
-    justify-content: center; /* Center-aligned */
-	padding-top: 5px;
-}
-
-#navigation3 {
-    justify-content: flex-end; /* Right-aligned */
-	padding-top: 5px;
 }
 
 /* Layout Sections */
@@ -138,6 +136,7 @@ body {
     padding: 15px;
     background-color: #7CDDEE;
     color: #333;
+    border-top: 1px solid #ddd;
 }
 
 /* Utility Classes */
