@@ -198,7 +198,7 @@ input:checked + .slider::before {
 	transform: translateX(14px);
 }
 
-.slider-row label {
+.form-row2 label {
 	vertical-align: middle; /* Ensure label text aligns with slider */
 }
 

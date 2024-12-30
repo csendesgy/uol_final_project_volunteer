@@ -153,6 +153,55 @@ body {
     margin: auto;
 }
 
+/*Slide switch*/
+.switch {
+        position: relative;
+        display: inline-block;
+        width: 34px;
+        height: 20px;
+        margin-left: 10px;
+    }
+
+.switch input {
+	display: none;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.4s;
+	border-radius: 34px;
+}
+
+.slider::before {
+	position: absolute;
+	content: "";
+	height: 14px;
+	width: 14px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.4s;
+	border-radius: 50%;
+}
+
+input:checked + .slider {
+	background-color: #7CDDEE;
+}
+
+input:checked + .slider::before {
+	transform: translateX(14px);
+}
+
+.slider-row label {
+	vertical-align: middle; /* Ensure label text aligns with slider */
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .navbar-nav {

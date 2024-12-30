@@ -136,3 +136,52 @@ For now, I stick with it and maybe later I will use my parctice domain to point 
 
 # started to see invalid requests coming in from unkown source
 modifiex nginx config to drop those connections so it does not get to django. Security enhancment
+
+27/12/2024
+#set up the default django tables for auth
+python manage.py migrate
+
+#create superuser
+python manage.py createsuperuser
+
+#install bootstrap
+pip install django-bootstrap4
+
+#add it to the settings.py
+
+# add html files
+header
+title
+footer
+base
+new index
+css file
+
+# collect static files
+python manage.py collectstatic
+
+#create login first as siteadmin exists
+login.html
+home.html
+views.py 
+
+#implement logout
+views.py 
+
+30/12/2024
+Fixing the style issues
+base.html
+header.html
+home.html
+ossvol.css
+
+#create the db tables for user and org, and populate skills / language, lang level tables
+parts of volunteer_db.sql
+dml_preload.sql
+models.py
+
+#create the registration form for org / volunteer, does not submit yet, but pulls in existing values for language / skill
+ossvol.css
+urls.py
+views.py
+register.html

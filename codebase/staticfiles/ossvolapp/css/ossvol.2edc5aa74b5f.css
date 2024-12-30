@@ -198,10 +198,6 @@ input:checked + .slider::before {
 	transform: translateX(14px);
 }
 
-.slider-row label {
-	vertical-align: middle; /* Ensure label text aligns with slider */
-}
-
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .navbar-nav {
