@@ -25,11 +25,11 @@
             <div class="form-row">
                 <div class="col">
                     <label for="username">Username:<span style="color: red;">*</span></label>
-                    <input type="text" id="username" name="username" class="form-control" required>
+                    <input type="text" id="username" name="username" class="form-control" data-required="true" required>
                 </div>
                 <div class="col">
                     <label for="org-email">Org Email:<span style="color: red;">*</span></label>
-                    <input type="email" id="org-email" name="org_email" class="form-control" required>
+                    <input type="email" id="org-email" name="org_email" class="form-control" data-required="true" required>
                 </div>
             </div>
 
@@ -37,7 +37,7 @@
 				<div class="col">
 					<label for="org-password">Password:<span style="color: red;">*</span></label>
 					<div class="input-group">
-						<input type="password" id="org-password" name="password" class="form-control" placeholder="Enter your password" required>
+						<input type="password" id="org-password" name="password" class="form-control" placeholder="Enter your password" data-required="true" required>
 						<div class="input-group-append">
 							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('org-password')">
 								<i class="fas fa-eye"></i>
@@ -48,7 +48,7 @@
 				<div class="col">
 					<label for="org-password-confirm">Confirm Password:<span style="color: red;">*</span></label>
 					<div class="input-group">
-						<input type="password" id="org-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" required>
+						<input type="password" id="org-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" data-required="true" required>
 						<div class="input-group-append">
 							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('org-password-confirm')">
 								<i class="fas fa-eye"></i>
@@ -62,7 +62,7 @@
             <div class="form-row">
                 <div class="col">
                     <label for="org-name">Org Name:<span style="color: red;">*</span></label>
-                    <input type="text" id="org-name" name="org_name" class="form-control" required>
+                    <input type="text" id="org-name" name="org_name" class="form-control" data-required="true" required>
                 </div>
                 <div class="col">
                     <label for="org-web">Org Web:</label>
@@ -93,11 +93,11 @@
             <div class="form-row">
                 <div class="col">
                     <label for="username">Username:<span style="color: red;">*</span></label>
-                    <input type="text" id="username" name="username" class="form-control" required>
+                    <input type="text" id="username" name="username" class="form-control" data-required="true" required>
                 </div>
                 <div class="col">
                     <label for="email">Email:<span style="color: red;">*</span></label>
-                    <input type="email" id="email" name="email" class="form-control" required>
+                    <input type="email" id="email" name="email" class="form-control" data-required="true" required>
                 </div>
             </div>
 
@@ -105,7 +105,7 @@
 				<div class="col">
 					<label for="vol-password">Password:<span style="color: red;">*</span></label>
 					<div class="input-group">
-						<input type="password" id="vol-password" name="password" class="form-control" placeholder="Enter your password" required>
+						<input type="password" id="vol-password" name="password" class="form-control" placeholder="Enter your password" data-required="true" required>
 						<div class="input-group-append">
 							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('vol-password')">
 								<i class="fas fa-eye"></i>
@@ -116,7 +116,7 @@
 				<div class="col">
 					<label for="vol-password-confirm">Confirm Password:<span style="color: red;">*</span></label>
 					<div class="input-group">
-						<input type="password" id="vol-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" required>
+						<input type="password" id="vol-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" data-required="true" required>
 						<div class="input-group-append">
 							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('vol-password-confirm')">
 								<i class="fas fa-eye"></i>
@@ -129,23 +129,23 @@
             <div class="form-row">
                 <div class="col">
                     <label for="first-name">First Name:<span style="color: red;">*</span></label>
-                    <input type="text" id="first-name" name="first_name" class="form-control" required>
+                    <input type="text" id="first-name" name="first_name" class="form-control" data-required="true" required>
                 </div>
                 <div class="col">
                     <label for="last-name">Last Name:<span style="color: red;">*</span></label>
-                    <input type="text" id="last-name" name="last_name" class="form-control" required>
+                    <input type="text" id="last-name" name="last_name" class="form-control" data-required="true" required>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="col">
                     <label for="birth-year">Birth Year:<span style="color: red;">*</span></label>
-                    <input type="number" id="birth-year" name="birth_year" class="form-control" required>
+                    <input type="number" id="birth-year" name="birth_year" class="form-control" data-required="true" required>
                 </div>
 				<!-- Native Language -->                
 				<div class="col">
                     <label for="native-language">Native Language:<span style="color: red;">*</span></label>
-					<input list="native-language-list" id="native-language" name="native_language" class="form-control" placeholder="Type or select a language" required>
+					<input list="native-language-list" id="native-language" name="native_language" class="form-control" placeholder="Type or select a language" data-required="true" required>
 					<datalist id="native-language-list">
 						{% for language in languages %}
 							<option value="{{ language.language }}">
@@ -223,13 +223,61 @@
 </div>
 
 <script>
-    // Toggle Forms
-    document.querySelectorAll('input[name="user_type"]').forEach(function (el) {
-        el.addEventListener('change', function () {
-            document.getElementById('volunteer-form').style.display = this.value === 'volunteer' ? 'block' : 'none';
-            document.getElementById('organization-form').style.display = this.value === 'organization' ? 'block' : 'none';
-        });
-    });
+	// Toggle Forms Logic
+	function toggleForms() {
+		const selectedUserType = document.querySelector('input[name="user_type"]:checked').value;
+		const volunteerForm = document.getElementById('volunteer-form');
+		const organizationForm = document.getElementById('organization-form');
+
+		if (selectedUserType === 'volunteer') {
+			// Show Volunteer Form, Hide Organization Form
+			volunteerForm.style.display = 'block';
+			organizationForm.style.display = 'none';
+
+			// Disable fields in organization form
+			organizationForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.disabled = true;
+				field.required = false; // Ensure organization fields are not required
+			});
+
+			// Enable fields in volunteer form
+			volunteerForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.disabled = false;
+				if (field.hasAttribute('data-required')) {
+					field.required = true; // Restore 'required' for relevant fields
+				}
+			});
+		} else {
+			// Show Organization Form, Hide Volunteer Form
+			volunteerForm.style.display = 'none';
+			organizationForm.style.display = 'block';
+
+			// Disable fields in volunteer form
+			volunteerForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.disabled = true;
+				field.required = false; // Ensure volunteer fields are not required
+			});
+
+			// Enable fields in organization form
+			organizationForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.disabled = false;
+				if (field.hasAttribute('data-required')) {
+					field.required = true; // Restore 'required' for relevant fields
+				}
+			});
+		}
+	}
+
+	// Event Listeners for Toggle
+	document.addEventListener("DOMContentLoaded", function () {
+		// Attach change event to radio buttons
+		document.querySelectorAll('input[name="user_type"]').forEach(function (el) {
+			el.addEventListener('change', toggleForms);
+		});
+		// Call toggle logic immediately on page load
+		toggleForms();
+	});
+
 
     // Profile Image Preview
     ['vol', 'org'].forEach(function (type) {
