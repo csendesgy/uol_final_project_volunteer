@@ -33,6 +33,32 @@
                 </div>
             </div>
 
+			<div class="form-row">
+				<div class="col">
+					<label for="org-password">Password:<span style="color: red;">*</span></label>
+					<div class="input-group">
+						<input type="password" id="org-password" name="password" class="form-control" placeholder="Enter your password" required>
+						<div class="input-group-append">
+							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('org-password')">
+								<i class="fas fa-eye"></i>
+							</span>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<label for="org-password-confirm">Confirm Password:<span style="color: red;">*</span></label>
+					<div class="input-group">
+						<input type="password" id="org-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" required>
+						<div class="input-group-append">
+							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('org-password-confirm')">
+								<i class="fas fa-eye"></i>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
             <div class="form-row">
                 <div class="col">
                     <label for="org-name">Org Name:<span style="color: red;">*</span></label>
@@ -74,6 +100,31 @@
                     <input type="email" id="email" name="email" class="form-control" required>
                 </div>
             </div>
+
+			<div class="form-row">
+				<div class="col">
+					<label for="vol-password">Password:<span style="color: red;">*</span></label>
+					<div class="input-group">
+						<input type="password" id="vol-password" name="password" class="form-control" placeholder="Enter your password" required>
+						<div class="input-group-append">
+							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('vol-password')">
+								<i class="fas fa-eye"></i>
+							</span>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<label for="vol-password-confirm">Confirm Password:<span style="color: red;">*</span></label>
+					<div class="input-group">
+						<input type="password" id="vol-password-confirm" name="password2" class="form-control" placeholder="Confirm your password" required>
+						<div class="input-group-append">
+							<span class="input-group-text toggle-password" onclick="togglePasswordVisibility('vol-password-confirm')">
+								<i class="fas fa-eye"></i>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
 
             <div class="form-row">
                 <div class="col">
@@ -238,5 +289,72 @@
         container.appendChild(skillDiv);
     });
     
+    //Ensure single data point on submission
+	document.getElementById('registration-form').addEventListener('submit', function (e) {
+		// Determine which form is currently visible
+		if (!validatePasswordMatch()) {
+			e.preventDefault();
+		}		
+
+		const volunteerForm = document.getElementById('volunteer-form');
+		const organizationForm = document.getElementById('organization-form');
+
+		// If the volunteer form is visible, clear the organization form fields
+		if (volunteerForm.style.display === 'block') {
+			organizationForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.value = ''; // Clear value
+			});
+		}
+
+		// If the organization form is visible, clear the volunteer form fields
+		if (organizationForm.style.display === 'block') {
+			volunteerForm.querySelectorAll('input, textarea, select').forEach(function (field) {
+				field.value = ''; // Clear value
+			});
+		}
+	});
+
+	// Password Matching Validation
+    const validatePasswordMatch = () => {
+		const volunteerForm = document.getElementById('volunteer-form').style.display === 'block';
+		const organizationForm = document.getElementById('organization-form').style.display === 'block';
+
+		if (volunteerForm) {
+			const password = document.getElementById('vol-password').value;
+			const confirmPassword = document.getElementById('vol-password-confirm').value;
+			if (password !== confirmPassword) {
+				alert("Volunteer passwords do not match!");
+				return false;
+			}
+		}
+
+		if (organizationForm) {
+			const orgPassword = document.getElementById('org-password').value;
+			const orgConfirmPassword = document.getElementById('org-password-confirm').value;
+			if (orgPassword !== orgConfirmPassword) {
+				alert("Organization passwords do not match!");
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	//password visibility toggle
+	function togglePasswordVisibility(fieldId) {
+		const field = document.getElementById(fieldId);
+		const icon = field.nextElementSibling.querySelector('i');
+		if (field.type === 'password') {
+			field.type = 'text';
+			icon.classList.remove('fa-eye');
+			icon.classList.add('fa-eye-slash');
+		} else {
+			field.type = 'password';
+			icon.classList.remove('fa-eye-slash');
+			icon.classList.add('fa-eye');
+		}
+	}
+
+
 </script>
 {% endblock %}

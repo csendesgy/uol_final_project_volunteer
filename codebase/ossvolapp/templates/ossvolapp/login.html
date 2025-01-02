@@ -13,10 +13,11 @@
             </div>
             <div class="form-group mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password">
-                <div class="form-check mt-2">
-                    <input type="checkbox" class="form-check-input" id="show-password" onclick="togglePasswordVisibility()">
-                    <label class="form-check-label" for="show-password">Show Password</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password">
+                    <span class="input-group-text">
+                        <i class="fa fa-eye-slash" id="toggle-password" onclick="togglePasswordVisibility()" style="cursor: pointer;"></i>
+                    </span>
                 </div>
             </div>
             <button type="submit" class="btn btn-success w-100">Sign In</button>
@@ -31,10 +32,15 @@
 <script>
     function togglePasswordVisibility() {
         const passwordField = document.getElementById("password");
+        const toggleIcon = document.getElementById("toggle-password");
         if (passwordField.type === "password") {
             passwordField.type = "text";
+            toggleIcon.classList.remove("fa-eye-slash");
+            toggleIcon.classList.add("fa-eye");
         } else {
             passwordField.type = "password";
+            toggleIcon.classList.remove("fa-eye");
+            toggleIcon.classList.add("fa-eye-slash");
         }
     }
 </script>
