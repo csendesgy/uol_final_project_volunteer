@@ -13,4 +13,5 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'), 
     path('home/', views.home_view, name='home'),  # Home page for logged-in users  
+    path('profile/', views.profile_view, name='profile'),
 ]

@@ -185,3 +185,13 @@ ossvol.css
 urls.py
 views.py
 register.html
+
+02/01/2025
+#make the submission work
+views.py
+register.html
+
+03/01/2025 edit user profile
+profile.html
+views.py
+urls.py

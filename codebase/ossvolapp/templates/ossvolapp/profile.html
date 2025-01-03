@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Profile</h2>
+    <form method="post" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Profile Image Section -->
+            <div class="col-md-4 text-center">
+				{% if is_org %}
+					<div class="alert alert-info">
+						{{ org_status }}
+					</div>
+				{% endif %}
+                <img src="{{ profile_image_url|default:'#' }}" 
+                     alt="Profile Image" 
+                     class="rounded-circle img-fluid mb-3" style="max-width: 200px;">
+                <div class="form-group">
+                    <label for="profile_image">Profile Image</label>
+                    <input type="file" name="profile_image" class="form-control">
+                </div>
+            </div>
+
+            <!-- Form Fields Section -->
+            <div class="col-md-8">
+                {% if is_org %}
+                    <h4>Organization Information</h4>
+                    <div class="form-group">
+                        <label for="org_name">Org Name</label>
+                        <input type="text" name="org_name" class="form-control" value="{{ org_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="org_email">Org Email</label>
+                        <input type="email" name="org_email" class="form-control" value="{{ org_email }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="org_web">Org Web</label>
+                        <input type="text" name="org_web" class="form-control" value="{{ org_web }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="org_phone">Org Phone</label>
+                        <input type="text" name="org_phone" class="form-control" value="{{ org_phone }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="org_intro">Org Introduction</label>
+                        <textarea name="org_intro" class="form-control">{{ org_intro }}</textarea>
+                    </div>
+                {% else %}
+                    <h4>Volunteer Information</h4>
+                    <div class="form-row">
+                        <div class="col">
+                            <label for="first_name">First Name</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ first_name }}">
+                        </div>
+                        <div class="col">
+                            <label for="last_name">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ last_name }}">
+                        </div>
+                    </div>
+					<div class="form-group mt-3">
+						<label for="native_language">Native Language</label>
+						<input list="native-language-options" name="native_language" class="form-control" placeholder="Type or select a language" value="{{ native_language }}">
+						<datalist id="native-language-options">
+							{% for language in languages %}
+								<option value="{{ language.language }}">
+							{% endfor %}
+						</datalist>
+					</div>
+
+                    <div class="form-row mt-3">
+                        <div class="col">
+                            <label for="birth_year">Birth Year</label>
+                            <input type="number" name="birth_year" class="form-control" value="{{ birth_year }}">
+                        </div>
+                        <div class="col">
+                            <label for="phone">Phone</label>
+                            <input type="text" name="phone" class="form-control" value="{{ phone }}">
+                        </div>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="job_title">Job Title</label>
+                        <input type="text" name="job_title" class="form-control" value="{{ job_title }}">
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="intro">Introduction</label>
+                        <textarea name="intro" class="form-control">{{ intro }}</textarea>
+                    </div>
+
+					<div class="form-row slider-row mt-4">
+						<div class="col">
+							<label for="accept-recommendations">Accept recommendations from other volunteers?</label>
+							<label class="switch">
+								<input type="checkbox" id="accept-recommendations" name="accept_recommendations" {% if accept_recommendation == 'Y' %}checked{% endif %}>
+								<span class="slider round"></span>
+							</label>
+						</div>
+						<div class="col">
+							<label for="visible-for-orgs">Visible to organizations?</label>
+							<label class="switch">
+								<input type="checkbox" id="visible-for-orgs" name="visible_to_orgs" {% if visible_to_orgs == 'Y' %}checked{% endif %}>
+								<span class="slider round"></span>
+							</label>
+						</div>
+					</div>
+
+					<div class="form-row slider-row mt-3">
+						<div class="col">
+							<label for="willing-physical-work">Willing to do light physical work? (frequently 10 lb max)</label>
+							<label class="switch">
+								<input type="checkbox" id="willing-physical-work" name="willing_to_light_physical" {% if willing_to_light_physical == 'Y' %}checked{% endif %}>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="col">
+							<label for="willing-to-translate">Willing to translate?</label>
+							<label class="switch">
+								<input type="checkbox" id="willing-to-translate" name="willing_to_translate" {% if willing_to_translate == 'Y' %}checked{% endif %}>
+								<span class="slider round"></span>
+							</label>
+						</div>
+					</div>
+
+                    <!-- Additional Languages -->
+                    <div class="form-group mt-4">
+                        <label>Additional Languages</label>
+                        <div id="languages-container">
+                            {% for language in volunteer_languages %}
+                                <div class="form-row align-items-center mt-2">
+                                    <div class="col">
+                                        <input type="text" name="existing_languages[]" class="form-control" value="{{ language.language }}" readonly>
+                                    </div>
+                                    <div class="col">
+                                        <input type="text" name="existing_language_levels[]" class="form-control" value="{{ language.level }}" readonly>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-danger remove-language">Remove</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-secondary mt-2" id="add-language">+ Add Language</button>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="form-group mt-4">
+                        <label>Skills</label>
+                        <div id="skills-container">
+                            {% for skill in volunteer_skills %}
+                                <div class="form-row align-items-center mt-2">
+                                    <div class="col">
+                                        <input type="text" name="existing_skills[]" class="form-control" value="{{ skill.skill_name }}" readonly>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-danger remove-skill">Remove</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-secondary mt-2" id="add-skill">+ Add Skill</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Add language functionality
+    document.getElementById('add-language').addEventListener('click', function() {
+        const container = document.getElementById('languages-container');
+        const languageDiv = document.createElement('div');
+        languageDiv.classList.add('form-row', 'align-items-center', 'mt-2');
+        languageDiv.innerHTML = `
+            <div class="col">
+                <input type="text" name="additional_languages[]" class="form-control" placeholder="Language">
+            </div>
+            <div class="col">
+                <select name="language_levels[]" class="form-control">
+                    <option value="">Select Level</option>
+                    {% for level in language_levels %}
+                        <option value="{{ level.languages_level_id }}">{{ level.languages_level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-language">Remove</button>
+            </div>
+        `;
+        container.appendChild(languageDiv);
+    });
+
+    // Remove language functionality
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-language')) {
+            event.target.closest('.form-row').remove();
+        }
+    });
+
+    // Add skill functionality
+    document.getElementById('add-skill').addEventListener('click', function() {
+        const container = document.getElementById('skills-container');
+        const skillDiv = document.createElement('div');
+        skillDiv.classList.add('form-row', 'align-items-center', 'mt-2');
+        skillDiv.innerHTML = `
+            <div class="col">
+                <input type="text" name="skills[]" class="form-control" placeholder="Skill">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-skill">Remove</button>
+            </div>
+        `;
+        container.appendChild(skillDiv);
+    });
+
+    // Remove skill functionality
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-skill')) {
+            event.target.closest('.form-row').remove();
+        }
+    });
+</script>
+{% endblock %}

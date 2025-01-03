@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import *
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
-from django.contrib.auth.hashers import make_password
 from django.db.models.functions import Upper
+from .models import *
+import base64
 
 def index_view(request):
     return render(request, 'index.html')  # Public landing page
@@ -228,3 +230,191 @@ def register_view(request):
         else:
             messages.error(request, "Invalid user type selected.")
             return redirect('register')
+
+@login_required
+def profile_view(request):
+    user = request.user
+    is_org = user.extension.is_org  # Determine if the user is an organization or a volunteer
+    context = {}
+    profile_image_url = None
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                if is_org:
+                    # Handle organization updates
+                    profile = ProfilesOrg.objects.filter(user=user).first()
+                    if not profile:
+                        messages.error(request, "Organization profile not found.")
+                        return redirect('profile')
+
+                    profile.org_web = request.POST.get('org_web', '')
+                    profile.org_tel = request.POST.get('org_phone', '')
+                    profile.introduction = request.POST.get('org_intro', '')
+                    if 'profile_image' in request.FILES:
+                        profile.profile_image_org = request.FILES['profile_image'].read()
+                    profile.save()
+
+                else:
+                    # Handle volunteer updates
+                    profile = ProfilesVolunteer.objects.filter(user=user).first()
+                    if not profile:
+                        messages.error(request, "Volunteer profile not found.")
+                        return redirect('profile')
+
+                    user.first_name = request.POST.get('first_name', user.first_name)
+                    user.last_name = request.POST.get('last_name', user.last_name)
+                    user.email = request.POST.get('email', user.email)
+                    user.save()
+
+                    profile.birth_year = request.POST.get('birth_year', profile.birth_year)
+                    profile.tel = request.POST.get('phone', profile.tel)
+                    profile.job_title = request.POST.get('job_title', profile.job_title)
+                    profile.introduction = request.POST.get('intro', profile.introduction)
+                    profile.accept_recommendation = 'Y' if request.POST.get('accept_recommendations') else 'N'
+                    profile.visible_to_orgs = 'Y' if request.POST.get('visible_to_orgs') else 'N'
+                    profile.willing_to_translate = 'Y' if request.POST.get('willing_to_translate') else 'N'
+                    profile.willing_to_light_physical = 'Y' if request.POST.get('willing_to_light_physical') else 'N'
+                    if 'profile_image' in request.FILES:
+                        profile.profile_image_vol = request.FILES['profile_image'].read()
+
+                    # Handle native language update
+                    native_language_name = request.POST.get('native_language', '').strip()
+                    if native_language_name:
+                        normalized_language_name = native_language_name.title()
+                        native_language, created = Language.objects.get_or_create(
+                            language__iexact=normalized_language_name,
+                            defaults={'language': normalized_language_name}
+                        )
+                        profile.native_language = native_language
+
+                    profile.save()
+
+                    # Handle additional languages
+                    additional_languages = request.POST.getlist('additional_languages[]')
+                    language_levels = request.POST.getlist('language_levels[]')
+
+                    existing_language_entries = VolunteerLanguage.objects.filter(profiles_vol=profile).select_related('language')
+
+                    for language_name, level_id in zip(additional_languages, language_levels):
+                        if language_name.strip():
+                            normalized_language_name = language_name.strip().title()
+
+                            existing_entry = existing_language_entries.filter(language__language__iexact=normalized_language_name).first()
+                            language_level = LanguageLevel.objects.filter(pk=level_id).first()
+
+                            if not language_level:
+                                continue
+
+                            if existing_entry:
+                                existing_entry.languages_level = language_level
+                                existing_entry.save()
+                            else:
+                                language, created = Language.objects.get_or_create(
+                                    language__iexact=normalized_language_name,
+                                    defaults={'language': normalized_language_name}
+                                )
+                                VolunteerLanguage.objects.create(
+                                    profiles_vol=profile,
+                                    language=language,
+                                    languages_level=language_level
+                                )
+
+                    # Handle skills
+                    new_skills = request.POST.getlist('skills[]')
+                    existing_skills = request.POST.getlist('existing_skills[]')
+
+                    VolunteerSkill.objects.filter(profiles_vol=profile).exclude(
+                        skill__skill_name__in=existing_skills
+                    ).delete()
+
+                    for skill_name in new_skills:
+                        if skill_name.strip():
+                            skill, created = Skill.objects.get_or_create(
+                                skill_name__iexact=skill_name.strip(),
+                                defaults={'skill_name': skill_name.strip().title()}
+                            )
+                            VolunteerSkill.objects.get_or_create(
+                                profiles_vol=profile,
+                                skill=skill
+                            )
+
+                messages.success(request, "Profile updated successfully!")
+                return redirect('profile')
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {e}")
+            return redirect('profile')
+
+    if is_org:
+        # Fetch organization profile data
+        profile = ProfilesOrg.objects.filter(user=user).first()
+        if profile:
+            profile_image_url = (
+                f"data:image/png;base64,{base64.b64encode(profile.profile_image_org).decode('utf-8')}" 
+                if profile.profile_image_org else None
+            )
+
+            # Determine organization profile status
+            if profile.site_admin_validated == 'Y' and profile.site_admin_approved == 'Y':
+                org_status = "Profile Approved"
+            elif profile.site_admin_validated == 'N' and profile.site_admin_approved == 'N':
+                org_status = "Profile Not Yet Validated"
+            else:
+                org_status = "Profile Rejected"
+
+            context = {
+                'is_org': True,
+                'profile_image_url': profile_image_url,
+                'org_name': profile.org_name,
+                'org_email': user.email,
+                'org_web': profile.org_web,
+                'org_phone': profile.org_tel,
+                'org_intro': profile.introduction,
+                'org_status': org_status,
+            }
+
+    else:
+        # Fetch volunteer profile data
+        profile = ProfilesVolunteer.objects.filter(user=user).first()
+        if profile:
+            profile_image_url = (
+                f"data:image/png;base64,{base64.b64encode(profile.profile_image_vol).decode('utf-8')}" 
+                if profile.profile_image_vol else None
+            )
+            volunteer_languages = profile.volunteerlanguage_set.select_related('language', 'languages_level').all()
+            volunteer_skills = profile.volunteerskill_set.select_related('skill').all()
+
+            context = {
+                'is_org': False,
+                'profile_image_url': profile_image_url,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'native_language': profile.native_language.language if profile.native_language else '',
+                'email': user.email,
+                'birth_year': profile.birth_year,
+                'phone': profile.tel,
+                'job_title': profile.job_title,
+                'intro': profile.introduction,
+                'accept_recommendation': profile.accept_recommendation,
+                'visible_to_orgs': profile.visible_to_orgs,
+                'willing_to_translate': profile.willing_to_translate,
+                'willing_to_light_physical': profile.willing_to_light_physical,
+                'volunteer_languages': [
+                    {
+                        'language': lang.language.language,
+                        'level': lang.languages_level.languages_level
+                    }
+                    for lang in volunteer_languages
+                ],
+                'volunteer_skills': [
+                    {
+                        'skill_name': skill.skill.skill_name
+                    }
+                    for skill in volunteer_skills
+                ],
+                'languages': Language.objects.all(),
+                'language_levels': LanguageLevel.objects.all(),
+            }
+
+    return render(request, 'profile.html', context)
