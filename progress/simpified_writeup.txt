@@ -195,3 +195,6 @@ register.html
 profile.html
 views.py
 urls.py
+
+06/01/2025 edit user profile
+Fixed additional language bug
