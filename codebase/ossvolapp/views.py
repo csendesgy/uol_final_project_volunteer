@@ -240,6 +240,10 @@ def profile_view(request):
 
     if request.method == 'POST':
         try:
+            #Debugging
+            #print("=== POST Data ===")
+            #print(request.POST)
+            
             with transaction.atomic():
                 if is_org:
                     # Handle organization updates
@@ -280,6 +284,7 @@ def profile_view(request):
 
                     # Handle native language update
                     native_language_name = request.POST.get('native_language', '').strip()
+                    #print("Native language:", native_language_name)
                     if native_language_name:
                         normalized_language_name = native_language_name.title()
                         native_language, created = Language.objects.get_or_create(
@@ -294,22 +299,34 @@ def profile_view(request):
                     additional_languages = request.POST.getlist('additional_languages[]')
                     language_levels = request.POST.getlist('language_levels[]')
 
-                    existing_language_entries = VolunteerLanguage.objects.filter(profiles_vol=profile).select_related('language')
+                    # Existing languages mapped for easy lookup
+                    existing_language_entries = {
+                        entry.language.language.lower(): entry for entry in
+                        VolunteerLanguage.objects.filter(profiles_vol=profile).select_related('language', 'languages_level')
+                    }
 
+                    # Track submitted languages
+                    submitted_languages = {lang.strip().lower() for lang in request.POST.getlist('existing_languages[]') + additional_languages}
+
+                    # Update or add languages
                     for language_name, level_id in zip(additional_languages, language_levels):
                         if language_name.strip():
                             normalized_language_name = language_name.strip().title()
-
-                            existing_entry = existing_language_entries.filter(language__language__iexact=normalized_language_name).first()
                             language_level = LanguageLevel.objects.filter(pk=level_id).first()
 
                             if not language_level:
+                                print(f"Skipping invalid level for language {normalized_language_name}")
                                 continue
 
-                            if existing_entry:
+                            if normalized_language_name.lower() in existing_language_entries:
+                                # Update existing entry
+                                existing_entry = existing_language_entries[normalized_language_name.lower()]
                                 existing_entry.languages_level = language_level
                                 existing_entry.save()
+                                #Debugging
+                                #print(f"Updated language: {normalized_language_name} with level {language_level.languages_level}")
                             else:
+                                # Add new language
                                 language, created = Language.objects.get_or_create(
                                     language__iexact=normalized_language_name,
                                     defaults={'language': normalized_language_name}
@@ -319,10 +336,22 @@ def profile_view(request):
                                     language=language,
                                     languages_level=language_level
                                 )
+                                #Debugging
+                                #print(f"Added new language: {normalized_language_name} with level {language_level.languages_level}")
+
+                    # Delete languages not in the submitted list
+                    for existing_language, entry in existing_language_entries.items():
+                        if existing_language not in submitted_languages:
+                            entry.delete()
+                            #Debugging
+                            #print(f"Deleted language: {existing_language}")
 
                     # Handle skills
                     new_skills = request.POST.getlist('skills[]')
                     existing_skills = request.POST.getlist('existing_skills[]')
+                    #Debugging
+                    #print("Submitted new skills:", new_skills)
+                    #print("Existing skills:", existing_skills)
 
                     VolunteerSkill.objects.filter(profiles_vol=profile).exclude(
                         skill__skill_name__in=existing_skills
@@ -343,6 +372,7 @@ def profile_view(request):
                 return redirect('profile')
 
         except Exception as e:
+            print("Error during profile update:", e)
             messages.error(request, f"An error occurred: {e}")
             return redirect('profile')
 
@@ -384,6 +414,10 @@ def profile_view(request):
             )
             volunteer_languages = profile.volunteerlanguage_set.select_related('language', 'languages_level').all()
             volunteer_skills = profile.volunteerskill_set.select_related('skill').all()
+
+            #Debugging
+            #print("Fetched volunteer languages:", list(volunteer_languages))
+            #print("Fetched volunteer skills:", list(volunteer_skills))
 
             context = {
                 'is_org': False,
