@@ -131,7 +131,13 @@
                                         <input type="text" name="existing_languages[]" class="form-control" value="{{ language.language }}" readonly>
                                     </div>
                                     <div class="col">
-                                        <input type="text" name="existing_language_levels[]" class="form-control" value="{{ language.level }}" readonly>
+                                        <select name="existing_language_levels[]" class="form-control">
+                                            {% for level in language_levels %}
+                                                <option value="{{ level.languages_level_id }}" {% if level.languages_level == language.level %}selected{% endif %}>
+                                                    {{ level.languages_level }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div class="col-auto">
                                         <button type="button" class="btn btn-danger remove-language">Remove</button>

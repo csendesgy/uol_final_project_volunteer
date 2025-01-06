@@ -338,6 +338,18 @@ def profile_view(request):
                                 )
                                 #Debugging
                                 #print(f"Added new language: {normalized_language_name} with level {language_level.languages_level}")
+                    # Update levels for existing languages
+                    existing_language_levels = request.POST.getlist('existing_language_levels[]')
+                    for lang, level_id in zip(request.POST.getlist('existing_languages[]'), existing_language_levels):
+                        normalized_language_name = lang.strip().lower()
+                        if normalized_language_name in existing_language_entries:
+                            existing_entry = existing_language_entries[normalized_language_name]
+                            language_level = LanguageLevel.objects.filter(pk=level_id).first()
+                            if language_level:
+                                existing_entry.languages_level = language_level
+                                existing_entry.save()
+                                #Debugging
+                                #print(f"Updated level for existing language: {lang} to {language_level.languages_level}")
 
                     # Delete languages not in the submitted list
                     for existing_language, entry in existing_language_entries.items():
