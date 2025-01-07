@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Organization Approval</h2>
+
+    <div class="row mt-4">
+		
+		<!-- To Be Validated -->
+        <div class="col-md-4">
+            <h4>To Be Validated</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Organization Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in to_be_validated_orgs %}
+                    <tr>
+                        <td>{{ org.org_name }}</td>
+                        <td>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="profiles_org_id" value="{{ org.profiles_org_id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="profiles_org_id" value="{{ org.profiles_org_id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>        
+
+        <!-- Rejected Organizations -->
+        <div class="col-md-4">
+            <h4>Rejected</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Organization Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in rejected_orgs %}
+                    <tr>
+                        <td>{{ org.org_name }}</td>
+                        <td>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="profiles_org_id" value="{{ org.profiles_org_id }}">
+                                <input type="hidden" name="action" value="revalidate">
+                                <button type="submit" class="btn btn-warning btn-sm">Revalidate</button>
+                            </form>
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="profiles_org_id" value="{{ org.profiles_org_id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+		<!-- Approved Organizations -->
+        <div class="col-md-4">
+            <h4>Approved</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Organization Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in approved_orgs %}
+                    <tr>
+                        <td>{{ org.org_name }}</td>
+                        <td>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="profiles_org_id" value="{{ org.profiles_org_id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        
+    </div>
+</div>
+{% endblock %}

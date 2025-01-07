@@ -464,3 +464,39 @@ def profile_view(request):
             }
 
     return render(request, 'profile.html', context)
+
+@login_required
+def orgapproval_view(request):
+    if not request.user.is_superuser or not request.user.is_active:
+        return redirect('home')
+
+    if request.method == 'POST':
+        profiles_org_id = request.POST.get('profiles_org_id')
+        action = request.POST.get('action')
+
+        if profiles_org_id and action:
+            try:
+                org = ProfilesOrg.objects.get(profiles_org_id=profiles_org_id)
+                if action == "approve":
+                    org.site_admin_approved = 'Y'
+                    org.site_admin_validated = 'Y'
+                elif action == "reject":
+                    org.site_admin_approved = 'N'
+                    org.site_admin_validated = 'Y'
+                elif action == "revalidate":
+                    org.site_admin_approved = 'N'
+                    org.site_admin_validated = 'N'
+                org.save()
+            except ProfilesOrg.DoesNotExist:
+                pass
+
+    approved_orgs = ProfilesOrg.objects.filter(site_admin_approved='Y')
+    rejected_orgs = ProfilesOrg.objects.filter(site_admin_approved='N', site_admin_validated='Y')
+    to_be_validated_orgs = ProfilesOrg.objects.filter(site_admin_approved='N', site_admin_validated='N')
+
+    context = {
+        'approved_orgs': approved_orgs,
+        'rejected_orgs': rejected_orgs,
+        'to_be_validated_orgs': to_be_validated_orgs,
+    }
+    return render(request, 'orgapproval.html', context)

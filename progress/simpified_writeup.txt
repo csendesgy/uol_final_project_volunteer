@@ -198,3 +198,13 @@ urls.py
 
 06/01/2025 edit user profile
 Fixed additional language bug
+
+07/01/2025 
+#added feature not implemented page so if something is not done, i can point to that
+#redirect login/pw reset to that page
+#add django page url for superadmin in the header.html
+# create org validation + add to header for site admin
+orgapproval.html
+views.py
+urls.py
+header.html
