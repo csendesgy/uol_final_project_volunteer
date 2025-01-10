@@ -5,13 +5,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models.functions import Upper
 from .models import *
 import base64
 
 def index_view(request):
     return render(request, 'index.html')  # Public landing page
+
+def notimp_view(request):
+    return render(request, 'notimplemented.html')  # Function not implemented
 
 def login_view(request):
     if request.method == "POST":
@@ -500,3 +503,90 @@ def orgapproval_view(request):
         'to_be_validated_orgs': to_be_validated_orgs,
     }
     return render(request, 'orgapproval.html', context)
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db import connection
+from ossvolapp.models import ProfilesOrg, ProfilesVolunteer
+
+@login_required
+def events_view(request):
+    user = request.user
+    is_org = user.extension.is_org  # Check if the user is an organization
+    upcoming_events = []
+    past_events = []
+
+    if is_org:
+        # Check if the user's organization is approved
+        try:
+            org_profile = ProfilesOrg.objects.get(user=user)
+            show_create_button = org_profile.site_admin_approved == 'Y'
+        except ProfilesOrg.DoesNotExist:
+            org_profile = None
+            show_create_button = False
+
+        if org_profile:
+            # Fetch events for the organization
+            with connection.cursor() as cursor:
+                # Query for upcoming events
+                cursor.execute("""
+                    SELECT event_name, event_zip, event_date 
+                    FROM uni_project.events 
+                    WHERE TRUNC(event_date) >= TRUNC(SYSDATE) 
+                      AND profiles_org_id = %s
+                    ORDER BY event_date DESC
+                """, [org_profile.profiles_org_id])
+                upcoming_events = cursor.fetchall()
+
+                # Query for past events
+                cursor.execute("""
+                    SELECT event_name, event_zip, event_date 
+                    FROM uni_project.events 
+                    WHERE TRUNC(event_date) < TRUNC(SYSDATE) 
+                      AND profiles_org_id = %s
+                    ORDER BY event_date DESC
+                """, [org_profile.profiles_org_id])
+                past_events = cursor.fetchall()
+    else:
+        # Fetch volunteer profile
+        try:
+            volunteer_profile = ProfilesVolunteer.objects.get(user=user)
+        except ProfilesVolunteer.DoesNotExist:
+            volunteer_profile = None
+
+        if volunteer_profile:
+            with connection.cursor() as cursor:
+                # Query for upcoming events
+                cursor.execute("""
+                    SELECT e.event_name, e.event_zip, e.event_date
+                    FROM uni_project.events e
+                    JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
+                    WHERE TRUNC(e.event_date) >= TRUNC(SYSDATE)
+                      AND ee.is_accepted = 'Y'
+                      AND ee.profiles_vol_id = %s
+                    ORDER BY e.event_date DESC
+                """, [volunteer_profile.profiles_vol_id])
+                upcoming_events = cursor.fetchall()
+
+                # Query for past events
+                cursor.execute("""
+                    SELECT e.event_name, e.event_zip, e.event_date
+                    FROM uni_project.events e
+                    JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
+                    WHERE TRUNC(e.event_date) < TRUNC(SYSDATE)
+                      AND ee.is_accepted = 'Y'
+                      AND ee.profiles_vol_id = %s
+                    ORDER BY e.event_date DESC
+                """, [volunteer_profile.profiles_vol_id])
+                past_events = cursor.fetchall()
+
+        show_create_button = False  # Volunteers cannot create events
+
+    context = {
+        'is_org': is_org,
+        'show_create_button': show_create_button,
+        'upcoming_events': upcoming_events,
+        'past_events': past_events,
+    }
+    return render(request, 'events.html', context)

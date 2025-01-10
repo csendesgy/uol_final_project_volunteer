@@ -85,3 +85,53 @@ class VolunteerLanguage(models.Model):
 
     class Meta:
         db_table = "volunteer_languages"
+
+class Event(models.Model):
+    event_id = models.DecimalField(primary_key=True, max_digits=38, decimal_places=0)  
+    profiles_org_id = models.ForeignKey('ProfilesOrg', on_delete=models.CASCADE, db_column='profiles_org_id')  
+    event_name = models.CharField(max_length=100) 
+    event_zip = models.DecimalField(max_digits=5, decimal_places=0) 
+    event_date = models.DateField() 
+    event_description = models.CharField(max_length=4000)  
+    application_deadline = models.DateField() 
+    event_image = models.BinaryField()  
+
+    class Meta:
+        db_table = 'events'
+
+
+
+class EventSkill(models.Model):
+    event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id') 
+    skill_id = models.ForeignKey('Skill', on_delete=models.CASCADE, db_column='skill_id') 
+
+    class Meta:
+        db_table = 'event_skills'
+        unique_together = ('event_id', 'skill_id') 
+
+
+class EventTranslateLanguage(models.Model):
+    event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id')  
+    target_language_id = models.ForeignKey('Language', on_delete=models.CASCADE, db_column='target_language_id')  
+    required_language_level_id = models.ForeignKey('LanguageLevel', on_delete=models.CASCADE, db_column='required_language_level_id')  
+
+    class Meta:
+        db_table = 'event_translate_language'
+        unique_together = ('event_id', 'target_language_id')  
+
+
+class EventEnrollment(models.Model):
+    event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id') 
+    profiles_vol_id = models.ForeignKey('ProfilesVolunteer', on_delete=models.CASCADE, db_column='profiles_vol_id')
+    applied_at = models.DateField()  
+    is_accepted = models.CharField(max_length=1, null=True, blank=True) 
+    accepted_at = models.DateField(null=True, blank=True)  
+    is_rejected = models.CharField(max_length=1, null=True, blank=True)
+    rejected_at = models.DateField(null=True, blank=True)  
+    reject_reason = models.CharField(max_length=1000, null=True, blank=True)  
+    record_created_at = models.DateField()  
+    last_updated_at = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'event_enrollment'
+        unique_together = ('event_id', 'profiles_vol_id')  

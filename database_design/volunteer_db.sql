@@ -85,29 +85,38 @@ CREATE TABLE volunteer_languages (
 
 
 CREATE TABLE events (
-  event_id number PRIMARY KEY NOT NULL,
+  event_id number NOT NULL,
   profiles_org_id number NOT NULL,
   event_name VARCHAR2(100) NOT NULL,
   event_zip number(5) NOT NULL,
   event_date date NOT NULL,
   event_description VARCHAR2(4000) NOT NULL,
   application_deadline date NOT NULL,
-  event_image blob
+  event_image blob,
+  CONSTRAINT events_pk PRIMARY KEY (event_id) USING INDEX,
+  CONSTRAINT events_profiles_org_id_fk FOREIGN KEY (profiles_org_id) REFERENCES profiles_org(profiles_org_id)
 );
 
 CREATE TABLE event_skills (
-  event_id number PRIMARY KEY NOT NULL,
-  skill_id number NOT NULL
+  event_id number NOT NULL,
+  skill_id number NOT NULL,
+  CONSTRAINT event_skills_pk PRIMARY KEY (event_id, skill_id) USING INDEX,
+  CONSTRAINT event_skills_event_fk FOREIGN KEY (event_id) REFERENCES events(event_id), 
+  CONSTRAINT event_skills_skill_fk FOREIGN KEY (skill_id) REFERENCES skills(skill_id) 
 );
 
 CREATE TABLE event_translate_language (
-  event_id number PRIMARY KEY NOT NULL,
+  event_id number NOT NULL,
   target_language_id number NOT NULL,
-  required_language_level_id number NOT NULL
+  required_language_level_id number NOT NULL,
+  CONSTRAINT event_trn_lang_pk PRIMARY KEY (event_id, target_language_id) USING INDEX,
+  CONSTRAINT event_trn_lang_event_fk FOREIGN KEY (event_id) REFERENCES events(event_id), 
+  CONSTRAINT event_trn_lang_fk_language FOREIGN KEY (target_language_id) REFERENCES languages(language_id), -- Foreign Key for language
+  CONSTRAINT event_trn_lang_fk_level FOREIGN KEY (required_language_level_id) REFERENCES languages_level(languages_level_id) -- Foreign Key for language level
 );
 
 CREATE TABLE event_enrollment (
-  event_id number PRIMARY KEY NOT NULL,
+  event_id number NOT NULL,
   profiles_vol_id number NOT NULL,
   applied_at date NOT NULL,
   is_accepted varchar2(1),
@@ -116,7 +125,10 @@ CREATE TABLE event_enrollment (
   rejected_at date,
   reject_reason varchar2(1000),
   record_created_at date NOT NULL,
-  last_updated_at date
+  last_updated_at date,
+  CONSTRAINT event_enrollment_pk PRIMARY KEY (event_id, profiles_vol_id) USING INDEX,
+  CONSTRAINT event_enrollment_event_fk FOREIGN KEY (event_id) REFERENCES events(event_id), 
+  CONSTRAINT event_enrollment_volunteer_fk FOREIGN KEY (profiles_vol_id) REFERENCES profiles_volunteer(profiles_vol_id) -- Foreign Key for volunteer
 );
 
 CREATE TABLE recommendations (

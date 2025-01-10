@@ -208,3 +208,14 @@ orgapproval.html
 views.py
 urls.py
 header.html
+
+10/01/2025
+#update model for events
+#migrate model for events
+#fix "not implemented" view
+#add my events to header
+# myevents view + html
+events.html
+views.py
+urls.py
+header.html

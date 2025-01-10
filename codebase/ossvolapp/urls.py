@@ -14,6 +14,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'), 
     path('home/', views.home_view, name='home'),  # Home page for logged-in users  
     path('profile/', views.profile_view, name='profile'),
-    path('notimp/', views.register_view, name='notimplemented'), # Is something is not implemented, go to this page
+    path('notimp/', views.notimp_view, name='notimplemented'), # Is something is not implemented, go to this page
     path('orgapproval/', views.orgapproval_view, name='orgapproval'),
+    path('events/', views.events_view, name='events'),
 ]
