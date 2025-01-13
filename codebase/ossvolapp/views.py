@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
@@ -9,6 +10,7 @@ from django.db import transaction, connection
 from django.db.models.functions import Upper
 from .models import *
 import base64
+import cx_Oracle
 
 def index_view(request):
     return render(request, 'index.html')  # Public landing page
@@ -505,11 +507,6 @@ def orgapproval_view(request):
     return render(request, 'orgapproval.html', context)
 
 
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.db import connection
-from ossvolapp.models import ProfilesOrg, ProfilesVolunteer
-
 @login_required
 def events_view(request):
     user = request.user
@@ -531,7 +528,7 @@ def events_view(request):
             with connection.cursor() as cursor:
                 # Query for upcoming events
                 cursor.execute("""
-                    SELECT event_name, event_zip, event_date 
+                    SELECT event_id, event_name, event_zip, event_date 
                     FROM uni_project.events 
                     WHERE TRUNC(event_date) >= TRUNC(SYSDATE) 
                       AND profiles_org_id = %s
@@ -541,7 +538,7 @@ def events_view(request):
 
                 # Query for past events
                 cursor.execute("""
-                    SELECT event_name, event_zip, event_date 
+                    SELECT event_id, event_name, event_zip, event_date 
                     FROM uni_project.events 
                     WHERE TRUNC(event_date) < TRUNC(SYSDATE) 
                       AND profiles_org_id = %s
@@ -559,7 +556,7 @@ def events_view(request):
             with connection.cursor() as cursor:
                 # Query for upcoming events
                 cursor.execute("""
-                    SELECT e.event_name, e.event_zip, e.event_date
+                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date
                     FROM uni_project.events e
                     JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) >= TRUNC(SYSDATE)
@@ -571,7 +568,7 @@ def events_view(request):
 
                 # Query for past events
                 cursor.execute("""
-                    SELECT e.event_name, e.event_zip, e.event_date
+                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date
                     FROM uni_project.events e
                     JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) < TRUNC(SYSDATE)
@@ -590,3 +587,240 @@ def events_view(request):
         'past_events': past_events,
     }
     return render(request, 'events.html', context)
+
+@login_required
+def create_edit_event(request):
+    user = request.user
+
+    if not user.extension.is_org:
+        messages.error(request, "Only organizations can create or edit events.")
+        return redirect('events')
+
+    org_profile = ProfilesOrg.objects.filter(user=user).first()
+    if not org_profile:
+        messages.error(request, "Organization profile not found.")
+        return redirect('events')
+
+    event_id = request.POST.get('event_id') or request.GET.get('event_id')
+    is_edit = bool(event_id)
+
+    # Database connection details
+    dsn = settings.DATABASES['default']['NAME']
+    username = settings.DATABASES['default']['USER']
+    password = settings.DATABASES['default']['PASSWORD']
+
+    event_data = None
+    skills = []
+    languages = []
+    event_image_data = None
+
+    try:
+        with cx_Oracle.connect(user=username, password=password, dsn=dsn) as connection:
+            with connection.cursor() as cursor:
+                if is_edit:
+                    # Fetch event details for editing
+                    fetch_event_query = """
+                        SELECT event_name, event_zip, event_date, event_description, application_deadline
+                        FROM uni_project.events
+                        WHERE event_id = :1 AND profiles_org_id = :2
+                    """
+                    cursor.execute(fetch_event_query, [event_id, org_profile.profiles_org_id])
+                    row = cursor.fetchone()
+                    if row:
+                        event_data = {
+                            'event_name': row[0],
+                            'event_zip': row[1],
+                            'event_date': row[2],
+                            'event_description': row[3],
+                            'application_deadline': row[4],
+                        }
+                    else:
+                        messages.error(request, "Event not found or you do not have permission to edit it.")
+                        return redirect('events')
+                    # get the image
+                    fetch_image_query = """
+                            SELECT event_image
+                            FROM uni_project.events
+                            WHERE event_id = :1
+                        """
+                    cursor.execute(fetch_image_query, [event_id])
+                    image_row = cursor.fetchone()
+                    if image_row and image_row[0]:
+                        event_image_data = base64.b64encode(image_row[0].read()).decode()
+
+                    # Fetch associated skills
+                    fetch_skills_query = """
+                        SELECT s.skill_name
+                        FROM event_skills es
+                        JOIN skills s ON es.skill_id = s.skill_id
+                        WHERE es.event_id = :1
+                    """
+                    cursor.execute(fetch_skills_query, [event_id])
+                    skills = [row[0] for row in cursor.fetchall()]
+
+                    # Fetch associated languages
+                    fetch_languages_query = """
+                        SELECT l.language, ll.languages_level
+                        FROM event_translate_language etl
+                        JOIN languages l ON etl.target_language_id = l.language_id
+                        JOIN languages_level ll ON etl.required_language_level_id = ll.languages_level_id
+                        WHERE etl.event_id = :1
+                    """
+                    cursor.execute(fetch_languages_query, [event_id])
+                    languages = [{'language': row[0], 'level': row[1]} for row in cursor.fetchall()]
+
+                if request.method == 'POST':
+                    event_image = request.FILES.get('event_image')
+                    event_image_data = event_image.read() if event_image else None
+
+                    if is_edit:
+                        # Update existing event
+                        update_query = """
+                            UPDATE uni_project.events
+                            SET event_name = :1,
+                                event_zip = :2,
+                                event_date = TO_DATE(:3, 'YYYY-MM-DD'),
+                                event_description = :4,
+                                application_deadline = TO_DATE(:5, 'YYYY-MM-DD'),
+                                event_image = :6
+                            WHERE event_id = :7 AND profiles_org_id = :8
+                        """
+                        params = [
+                            request.POST.get('event_name'),
+                            request.POST.get('event_zip'),
+                            request.POST.get('event_date'),
+                            request.POST.get('event_description'),
+                            request.POST.get('application_deadline'),
+                            event_image_data,
+                            event_id,
+                            org_profile.profiles_org_id,
+                        ]
+                        cursor.execute(update_query, params)
+                    else:
+                        # Insert new event
+                        insert_query = """
+                            INSERT INTO uni_project.events
+                            (event_name, event_zip, event_date, event_description, application_deadline, event_image, profiles_org_id)
+                            VALUES (:1, :2, TO_DATE(:3, 'YYYY-MM-DD'), :4, TO_DATE(:5, 'YYYY-MM-DD'), :6, :7)
+                        """
+                        params = [
+                            request.POST.get('event_name'),
+                            request.POST.get('event_zip'),
+                            request.POST.get('event_date'),
+                            request.POST.get('event_description'),
+                            request.POST.get('application_deadline'),
+                            event_image_data,
+                            org_profile.profiles_org_id,
+                        ]
+                        cursor.execute(insert_query, params)
+                        # Fetch the event_id for the new event
+                        event_id_query = """
+                            SELECT event_id
+                            FROM uni_project.events
+                            WHERE profiles_org_id = :1
+                              AND event_name = :2
+                              AND event_zip = :3
+                              AND event_date = TO_DATE(:4, 'YYYY-MM-DD')
+                              AND application_deadline = TO_DATE(:5, 'YYYY-MM-DD')
+                        """
+                        cursor.execute(event_id_query, [
+                            org_profile.profiles_org_id,
+                            request.POST.get('event_name'),
+                            request.POST.get('event_zip'),
+                            request.POST.get('event_date'),
+                            request.POST.get('application_deadline'),
+                        ])
+                        event_id = cursor.fetchone()[0]
+
+                    connection.commit()
+
+                    # Handle skills
+                    new_skills = request.POST.getlist('skills[]')
+                    delete_skills_query = """
+                        DELETE FROM event_skills WHERE event_id = :1
+                    """
+                    cursor.execute(delete_skills_query, [event_id])
+
+                    for skill_name in new_skills:
+                        skill_query = """
+                            SELECT skill_id FROM skills WHERE LOWER(skill_name) = :1
+                        """
+                        cursor.execute(skill_query, [skill_name.lower()])
+                        skill_row = cursor.fetchone()
+
+                        if not skill_row:
+                            insert_skill_query = """
+                                INSERT INTO skills (skill_name) VALUES (:1) RETURNING skill_id INTO :2
+                            """
+                            skill_id_var = cursor.var(cx_Oracle.NUMBER)
+                            cursor.execute(insert_skill_query, [skill_name.title(), skill_id_var])
+                            skill_id = skill_id_var.getvalue(0)
+                        else:
+                            skill_id = skill_row[0]
+
+                        insert_event_skill_query = """
+                            INSERT INTO event_skills (event_id, skill_id) VALUES (:1, :2)
+                        """
+                        cursor.execute(insert_event_skill_query, [event_id, skill_id])
+
+                    # Handle languages
+                    additional_languages = request.POST.getlist('additional_languages[]')
+                    additional_language_levels = request.POST.getlist('language_levels[]')
+
+                    delete_languages_query = """
+                        DELETE FROM event_translate_language WHERE event_id = :1
+                    """
+                    cursor.execute(delete_languages_query, [event_id])
+
+                    for lang_name, level_id in zip(additional_languages, additional_language_levels):
+                        lang_query = """
+                            SELECT language_id FROM languages WHERE LOWER(language) = :1
+                        """
+                        cursor.execute(lang_query, [lang_name.lower()])
+                        lang_row = cursor.fetchone()
+
+                        if not lang_row:
+                            insert_language_query = """
+                                INSERT INTO languages (language) VALUES (:1) RETURNING language_id INTO :2
+                            """
+                            lang_id_var = cursor.var(cx_Oracle.NUMBER)
+                            cursor.execute(insert_language_query, [lang_name.title(), lang_id_var])
+                            language_id = lang_id_var.getvalue(0)
+                        else:
+                            language_id = lang_row[0]
+
+                        insert_event_language_query = """
+                            INSERT INTO event_translate_language (event_id, target_language_id, required_language_level_id)
+                            VALUES (:1, :2, :3)
+                        """
+                        cursor.execute(insert_event_language_query, [event_id, language_id, level_id])
+
+                    connection.commit()
+                    messages.success(request, f"Event {'updated' if is_edit else 'created'} successfully!")
+                    return redirect('events')
+
+    except cx_Oracle.DatabaseError as e:
+        print(f"Database error: {e}")
+        messages.error(request, "A database error occurred.")
+        return redirect('events')
+
+    # Prepare data for rendering the form
+    all_skills = Skill.objects.all()
+    all_languages = Language.objects.all()
+
+    context = {
+        'event_id': event_id,
+        'event_name': event_data['event_name'] if event_data else '',
+        'event_zip': event_data['event_zip'] if event_data else '',
+        'event_date': event_data['event_date'] if event_data else '',
+        'event_description': event_data['event_description'] if event_data else '',
+        'application_deadline': event_data['application_deadline'] if event_data else '',
+        'skills': skills,
+        'languages': languages,
+        'language_levels': LanguageLevel.objects.all(),
+        'all_skills': all_skills,
+        'all_languages': all_languages,
+        'event_image': event_image_data,
+    }
+
+    return render(request, 'create_edit_event.html', context)

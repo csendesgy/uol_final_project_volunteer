@@ -219,3 +219,9 @@ events.html
 views.py
 urls.py
 header.html
+
+13/01/2025
+#implemented create and edit event
+create_edit_event.html
+events.html
+views.py

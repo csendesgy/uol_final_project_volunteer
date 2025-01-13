@@ -107,7 +107,7 @@ class EventSkill(models.Model):
 
     class Meta:
         db_table = 'event_skills'
-        unique_together = ('event_id', 'skill_id') 
+        unique_together = (('event_id', 'skill_id'),) 
 
 
 class EventTranslateLanguage(models.Model):
@@ -117,7 +117,7 @@ class EventTranslateLanguage(models.Model):
 
     class Meta:
         db_table = 'event_translate_language'
-        unique_together = ('event_id', 'target_language_id')  
+        unique_together = (('event_id', 'target_language_id'),)
 
 
 class EventEnrollment(models.Model):

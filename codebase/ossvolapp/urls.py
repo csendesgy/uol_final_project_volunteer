@@ -17,4 +17,5 @@ urlpatterns = [
     path('notimp/', views.notimp_view, name='notimplemented'), # Is something is not implemented, go to this page
     path('orgapproval/', views.orgapproval_view, name='orgapproval'),
     path('events/', views.events_view, name='events'),
+    path('event_maintenance/', views.create_edit_event, name='eventmaint'),
 ]

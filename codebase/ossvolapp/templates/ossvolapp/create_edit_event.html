@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">{% if event_id %}Edit Event{% else %}Create New Event{% endif %}</h2>
+
+    <form method="post" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <input type="hidden" name="event_id" value="{{ event_id|default:'' }}">
+
+        <div class="row">
+            <!-- Event Details -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="event_name">Event Name:</label>
+                    <input type="text" name="event_name" class="form-control" value="{{ event_name|default:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="event_date">Event Date:</label>
+                    <input type="date" name="event_date" class="form-control" value="{{ event_date|date:'Y-m-d' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="event_description">Event Description:</label>
+                    <textarea name="event_description" class="form-control" required>{{ event_description|default:'' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="event_image">Event Image:</label>
+                    <input type="file" name="event_image" class="form-control">
+                    {% if event_id and event_image %}
+                    <div class="mt-2">
+                        <p>Current Image:</p>
+                        <img src="data:image/jpeg;base64,{{ event_image }}" alt="Event Image" class="img-thumbnail" style="max-width: 300px; max-height: 200px;">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Event Settings -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="event_zip">Event Zip Code:</label>
+                    <input type="number" name="event_zip" class="form-control" value="{{ event_zip|default:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="application_deadline">Application Deadline:</label>
+                    <input type="date" name="application_deadline" class="form-control" value="{{ application_deadline|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="form-group mt-4">
+            <label>Skills:</label>
+            <div id="skills-container">
+                {% for skill in skills %}
+                <div class="form-row align-items-center mt-2">
+                    <div class="col">
+                        <input type="text" name="skills[]" class="form-control" value="{{ skill }}" readonly>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger remove-skill">Remove</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <datalist id="skills-list">
+                {% for skill in all_skills %}
+                <option value="{{ skill.skill_name }}"></option>
+                {% endfor %}
+            </datalist>
+            <button type="button" class="btn btn-secondary mt-2" id="add-skill">+ Add Skill</button>
+        </div>
+
+        <!-- Languages -->
+        <div class="form-group mt-4">
+            <label>Languages:</label>
+            <div id="languages-container">
+                {% for language in languages %}
+                <div class="form-row align-items-center mt-2">
+                    <div class="col">
+                        <input type="text" name="additional_languages[]" class="form-control" value="{{ language.language }}" readonly>
+                    </div>
+                    <div class="col">
+                        <select name="language_levels[]" class="form-control">
+                            {% for level in language_levels %}
+                            <option value="{{ level.languages_level_id }}" {% if level.languages_level == language.level %}selected{% endif %}>
+                                {{ level.languages_level }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger remove-language">Remove</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <datalist id="languages-list">
+                {% for language in all_languages %}
+                <option value="{{ language.language }}"></option>
+                {% endfor %}
+            </datalist>
+            <button type="button" class="btn btn-secondary mt-2" id="add-language">+ Add Language</button>
+        </div>
+
+        <!-- Buttons -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'events' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Add skill functionality
+    document.getElementById('add-skill').addEventListener('click', function() {
+        const container = document.getElementById('skills-container');
+        const skillDiv = document.createElement('div');
+        skillDiv.classList.add('form-row', 'align-items-center', 'mt-2');
+        skillDiv.innerHTML = `
+            <div class="col">
+                <input type="text" name="skills[]" class="form-control" list="skills-list" placeholder="Skill">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-skill">Remove</button>
+            </div>
+        `;
+        container.appendChild(skillDiv);
+    });
+
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-skill')) {
+            event.target.closest('.form-row').remove();
+        }
+    });
+
+    // Add language functionality
+    document.getElementById('add-language').addEventListener('click', function() {
+        const container = document.getElementById('languages-container');
+        const languageDiv = document.createElement('div');
+        languageDiv.classList.add('form-row', 'align-items-center', 'mt-2');
+        languageDiv.innerHTML = `
+            <div class="col">
+                <input type="text" name="additional_languages[]" class="form-control" list="languages-list" placeholder="Language">
+            </div>
+            <div class="col">
+                <select name="language_levels[]" class="form-control">
+                    <option value="">Select Level</option>
+                    {% for level in language_levels %}
+                        <option value="{{ level.languages_level_id }}">{{ level.languages_level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger remove-language">Remove</button>
+            </div>
+        `;
+        container.appendChild(languageDiv);
+    });
+
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-language')) {
+            event.target.closest('.form-row').remove();
+        }
+    });
+</script>
+{% endblock %}
