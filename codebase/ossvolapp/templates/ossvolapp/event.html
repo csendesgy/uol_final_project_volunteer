@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">{{ event_data.event_name }}</h2>
+    <p class="text-center">Organized by: {{ event_data.organizer_name }}</p>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Event Details</h4>
+            <ul>
+                <li><strong>Date:</strong> {{ event_data.event_date|date:"Y-m-d" }}</li>
+                <li><strong>ZIP Code:</strong> {{ event_data.event_zip }}</li>
+                <li><strong>Application Deadline:</strong> {{ event_data.application_deadline|date:"Y-m-d" }}</li>
+				<li><strong>Accepted attendees:</strong> {{ event_data.attendees }}</li>
+            </ul>
+            <p><strong>Description:</strong></p>
+            <p>{{ event_data.event_description }}</p>
+        </div>
+        <div class="col-md-6">
+            <h4>Event Image</h4>
+            {% if event_data.event_image %}
+                <img src="data:image/jpeg;base64,{{ event_data.event_image }}" class="img-fluid" alt="Event Image">
+            {% else %}
+                <p>No image available for this event.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr>
+
+	<!-- Skills Section -->
+	<div class="row mt-4">
+		<div class="col-md-6">
+			<h4>Skills</h4>
+			{% if event_data.skills %}
+				<ul>
+					{% for skill in event_data.skills %}
+						<li>{{ skill }}</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p>No skills listed for this event.</p>
+			{% endif %}
+		</div>
+
+		<!-- Languages Section -->
+		<div class="col-md-6">
+			<h4>Languages</h4>
+			{% if event_data.languages %}
+				<ul>
+					{% for language in event_data.languages %}
+						<li>{{ language }}</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p>No languages listed for this event.</p>
+			{% endif %}
+		</div>
+	</div>
+
+    <hr>
+    <div class="text-center">
+        {% if is_logged_in %}
+            {% if is_volunteer %}
+                {% if enrollment_status == "rejected" %}
+                    <p class="text-danger">You have been rejected for this event.</p>
+                {% elif enrollment_status == "accepted" %}
+                    <p class="text-success">You have been accepted for this event!</p>
+                {% elif enrollment_status == "pending" %}
+                    <p class="text-warning">Your application is under review.</p>
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Apply for this Event</button>
+                    </form>
+                {% endif %}
+            {% else %}
+                <p class="text-info">Only volunteers can apply for events.</p>
+            {% endif %}
+        {% else %}
+            <p class="text-warning">Log in to apply for this event.</p>
+            <a href="{% url 'login' %}" class="btn btn-secondary">Log In</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

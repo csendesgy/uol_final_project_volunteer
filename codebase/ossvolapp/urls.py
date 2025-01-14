@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from django.http import HttpResponse
+from .api import *
 
 # Placeholder views for urls until implementation
 def placeholder_view(request):
@@ -18,4 +19,6 @@ urlpatterns = [
     path('orgapproval/', views.orgapproval_view, name='orgapproval'),
     path('events/', views.events_view, name='events'),
     path('event_maintenance/', views.create_edit_event, name='eventmaint'),
+    path('event/<int:event_id>/', views.event_page, name='event_page'),  # Normal view for the event page
+    path('api/event/<int:event_id>/', EventAPIView.as_view(), name='event_api'),  # API view for event data
 ]

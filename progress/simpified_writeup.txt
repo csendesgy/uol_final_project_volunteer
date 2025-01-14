@@ -225,3 +225,15 @@ header.html
 create_edit_event.html
 events.html
 views.py
+
+14/01/2025
+#adding single evnet view
+#add event application
+#add rest api for single event get.
+pip install djangorestframework
+settings.py
+urls.py
+api.py
+views.py
+event.html
+events.html
