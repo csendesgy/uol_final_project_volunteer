@@ -20,6 +20,9 @@
                         <th>Event Name</th>
                         <th>Zip Code</th>
                         <th>Event Date</th>
+						{% if is_org %}
+                        <th>Pending Approvals</th>
+                        {% endif %}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -29,6 +32,9 @@
                         <td>{{ event.1 }}</td>
                         <td>{{ event.2 }}</td>
                         <td>{{ event.3|date:"Y-m-d" }}</td>
+						{% if is_org %}
+                        <td>{{ event.4 }}</td>
+                        {% endif %}
                         <td>
 					        <a href="{% url 'event_page' event.0 %}" class="btn btn-primary btn-sm">Go to Event</a>
                             <a href="{% url 'notimplemented' %}" class="btn btn-success btn-sm">Go to Chat</a>

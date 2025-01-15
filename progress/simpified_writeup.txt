@@ -237,3 +237,11 @@ api.py
 views.py
 event.html
 events.html
+
+15/1/2025
+# Rewrite event query to simplify
+# update event view to display pending / approved / rejected volunteers Can't be updated yet.
+api.py
+views.py
+event.html
+events.html

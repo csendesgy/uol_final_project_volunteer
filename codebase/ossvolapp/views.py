@@ -528,11 +528,16 @@ def events_view(request):
             with connection.cursor() as cursor:
                 # Query for upcoming events
                 cursor.execute("""
-                    SELECT event_id, event_name, event_zip, event_date 
-                    FROM uni_project.events 
-                    WHERE TRUNC(event_date) >= TRUNC(SYSDATE) 
+                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date, count(ee.profiles_vol_id) as pending_approval_cnt
+                      FROM uni_project.events e
+                    LEFT JOIN uni_project.event_enrollment ee
+                      on (e.event_id = ee.event_id
+                      and nvl(ee.is_rejected,'N') = 'N' 
+                      and nvl(ee.is_accepted,'N') = 'N')
+                    WHERE TRUNC(e.event_date) >= TRUNC(SYSDATE) 
                       AND profiles_org_id = %s
-                    ORDER BY event_date DESC
+                GROUP BY e.event_id, e.event_name, e.event_zip, e.event_date                      
+                    ORDER BY e.event_date DESC					
                 """, [org_profile.profiles_org_id])
                 upcoming_events = cursor.fetchall()
 
@@ -830,6 +835,9 @@ def event_page(request, event_id):
     enrollment_status = None
     user = request.user if request.user.is_authenticated else None
     is_volunteer = user and not user.extension.is_org
+    accepted_volunteers = []
+    pending_volunteers = []
+    rejected_volunteers = []
 
     try:
         with cx_Oracle.connect(
@@ -840,84 +848,55 @@ def event_page(request, event_id):
             with connection.cursor() as cursor:
                 # Fetch event details
                 cursor.execute("""
-                    WITH list_1 as (
-                      SELECT 
-                          e.event_name,
-                          e.event_zip,
-                          e.event_date,
-                          e.event_description,
-                          e.application_deadline,
-                          o.org_name,
-                          LISTAGG(sk.skill_name, '; ') WITHIN GROUP (ORDER BY sk.skill_name) AS skills,
-                          e.event_id
-                      FROM uni_project.events e
-                      JOIN profiles_org o ON e.profiles_org_id = o.profiles_org_id
-                      LEFT JOIN uni_project.event_skills es ON e.event_id = es.event_id
-                      LEFT JOIN uni_project.skills sk ON es.skill_id = sk.skill_id
-                      WHERE e.event_id = :1
-                      GROUP BY 
-                          e.event_name, e.event_zip, e.event_date, e.event_description, 
-                          e.application_deadline
-                          , o.org_name, e.event_id
-                      )
-                    , list_2 as ( 
-                    select 
-                    l1.event_name,
-                        l1.event_zip,
-                        l1.event_date,
-                        l1.event_description,
-                        l1.application_deadline,
-                        l1.org_name,
-                        l1.skills,
-                        l1.event_id
-                        , LISTAGG(l.language || ' - ' || ll.languages_level, '; ') WITHIN GROUP (ORDER BY l.language) AS languages
-                     from list_1 l1
-                    LEFT JOIN uni_project.event_translate_language el ON l1.event_id = el.event_id
-                    LEFT JOIN uni_project.languages l ON el.target_language_id = l.language_id
-                    LEFT JOIN uni_project.languages_level ll ON el.required_language_level_id = ll.languages_level_id
-                    group by l1.event_name, l1.event_zip, l1.event_date,
-                        l1.event_description, l1.application_deadline,
-                        l1.org_name, l1.skills, l1.event_id)                  
-                    , list_3 as (
-                    select l2.event_name,
-                        l2.event_zip,
-                        l2.event_date,
-                        l2.event_description,
-                        l2.application_deadline,
-                    --    e2.event_image,
-                        l2.org_name,
-                        l2.skills,
-                        case 
-                          when l2.languages = ' - ' then null
-                        else l2.languages end languages,
-                        l2.event_id, 
-                        count(er.event_id) as no_of_attendees
-                    from list_2 l2
-                    left join uni_project.event_enrollment er on (l2.event_id = er.event_id  and er.is_accepted = 'Y')
-                    group by l2.event_name,
-                        l2.event_zip,
-                        l2.event_date,
-                        l2.event_description,
-                        l2.application_deadline,
-                        l2.org_name,
-                        l2.skills,
-                        case 
-                          when l2.languages = ' - ' then null
-                        else l2.languages end,
-                        l2.event_id
-                          )
-                    Select l3.event_name,
-                        l3.event_zip,
-                        l3.event_date,
-                        l3.event_description,
-                        l3.application_deadline,
-                        e2.event_image,
-                        l3.org_name,
-                        l3.skills,
-                        l3.languages,
-                        l3.no_of_attendees
-                    from list_3 l3
-                    join uni_project.events e2 on l3.event_id = e2.event_id
+                    WITH aggregated_data AS (
+                        SELECT
+                            e.event_name,
+                            e.event_zip,
+                            e.event_date,
+                            e.event_description,
+                            e.application_deadline,
+                            o.org_name,
+                            LISTAGG(DISTINCT sk.skill_name, '; ') WITHIN GROUP (ORDER BY sk.skill_name) AS skills,
+                            LISTAGG(DISTINCT l.language || ' - ' || ll.languages_level, '; ') WITHIN GROUP (ORDER BY l.language) AS languages,
+                            e.event_id,
+                            COUNT(DISTINCT CASE WHEN er.is_accepted = 'Y' THEN er.profiles_vol_id END) AS no_of_attendees,
+                            o.profiles_org_id
+                        FROM uni_project.events e
+                        JOIN uni_project.profiles_org o ON e.profiles_org_id = o.profiles_org_id
+                        LEFT JOIN uni_project.event_skills es ON e.event_id = es.event_id
+                        LEFT JOIN uni_project.skills sk ON es.skill_id = sk.skill_id
+                        LEFT JOIN uni_project.event_translate_language el ON e.event_id = el.event_id
+                        LEFT JOIN uni_project.languages l ON el.target_language_id = l.language_id
+                        LEFT JOIN uni_project.languages_level ll ON el.required_language_level_id = ll.languages_level_id
+                        LEFT JOIN uni_project.event_enrollment er ON (e.event_id = er.event_id AND er.is_accepted = 'Y')
+                        WHERE e.event_id = :1
+                        GROUP BY
+                            e.event_name,
+                            e.event_zip,
+                            e.event_date,
+                            e.event_description,
+                            e.application_deadline,
+                            o.org_name,
+                            e.event_id,
+                            o.profiles_org_id
+                    )
+                    SELECT
+                        ad.event_name,
+                        ad.event_zip,
+                        ad.event_date,
+                        ad.event_description,
+                        ad.application_deadline,
+                        e.event_image,
+                        ad.org_name,
+                        ad.skills,
+                        CASE
+                            WHEN ad.languages = ' - ' THEN NULL
+                            ELSE ad.languages
+                        END AS languages,
+                        ad.no_of_attendees,
+                        ad.profiles_org_id
+                    FROM aggregated_data ad
+                    JOIN uni_project.events e ON ad.event_id = e.event_id
                 """, [event_id])
                 row = cursor.fetchone()
                 if row:
@@ -943,11 +922,49 @@ def event_page(request, event_id):
                         'organizer_name': row[6],
                         'skills': skills,
                         'languages': languages,
-                        'attendees' : row[9]
+                        'attendees': row[9],
+                        'organizer_id': row[10],
                     }
                 else:
                     messages.error(request, "Event not found.")
                     return redirect('events')
+
+                # Fetch enrollment details for the organization that created the event
+                if user and not is_volunteer and user.extension.is_org:
+                    # Fetch the organization profile for the logged-in user
+                    org_profile = ProfilesOrg.objects.filter(user=user).first()
+                
+                #if user and not is_volunteer and user.extension.is_org and row[10] == user.extension.profiles_org_id:
+                if org_profile and org_profile.profiles_org_id == row[10]:
+                    # Accepted volunteers
+                    cursor.execute("""
+                        SELECT au.first_name, au.last_name, au.email, et.last_updated_at, et.profiles_vol_id
+                        FROM uni_project.event_enrollment et
+                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        WHERE et.event_id = :1 AND NVL(et.is_accepted, 'N') = 'Y'
+                    """, [event_id])
+                    accepted_volunteers = cursor.fetchall()
+
+                    # Pending volunteers
+                    cursor.execute("""
+                        SELECT au.first_name, au.last_name, au.email, et.last_updated_at, et.profiles_vol_id
+                        FROM uni_project.event_enrollment et
+                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        WHERE et.event_id = :1 AND NVL(et.is_accepted, 'N') = 'N' AND NVL(et.is_rejected, 'N') = 'N'
+                    """, [event_id])
+                    pending_volunteers = cursor.fetchall()
+
+                    # Rejected volunteers
+                    cursor.execute("""
+                        SELECT au.first_name, au.last_name, au.email, et.rejected_at, et.reject_reason, et.last_updated_at, et.profiles_vol_id
+                        FROM uni_project.event_enrollment et
+                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        WHERE et.event_id = :1 AND NVL(et.is_rejected, 'N') = 'Y'
+                    """, [event_id])
+                    rejected_volunteers = cursor.fetchall()
 
                 # Check enrollment status if the user is a logged-in volunteer
                 if is_volunteer:
@@ -993,6 +1010,11 @@ def event_page(request, event_id):
         'is_logged_in': bool(user),
         'is_volunteer': is_volunteer,
         'enrollment_status': enrollment_status,
+        'accepted_volunteers': accepted_volunteers,
+        'pending_volunteers': pending_volunteers,
+        'rejected_volunteers': rejected_volunteers,
+        #'is_event_organizer': user and not is_volunteer and event_data['organizer_id'] == user.extension.profiles_org_id,
+        'is_event_organizer': org_profile and event_data['organizer_id'] == org_profile.profiles_org_id,
     })
 
 

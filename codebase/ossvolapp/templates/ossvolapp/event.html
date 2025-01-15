@@ -11,7 +11,7 @@
                 <li><strong>Date:</strong> {{ event_data.event_date|date:"Y-m-d" }}</li>
                 <li><strong>ZIP Code:</strong> {{ event_data.event_zip }}</li>
                 <li><strong>Application Deadline:</strong> {{ event_data.application_deadline|date:"Y-m-d" }}</li>
-				<li><strong>Accepted attendees:</strong> {{ event_data.attendees }}</li>
+                <li><strong>Accepted attendees:</strong> {{ event_data.attendees }}</li>
             </ul>
             <p><strong>Description:</strong></p>
             <p>{{ event_data.event_description }}</p>
@@ -28,35 +28,146 @@
 
     <hr>
 
-	<!-- Skills Section -->
-	<div class="row mt-4">
-		<div class="col-md-6">
-			<h4>Skills</h4>
-			{% if event_data.skills %}
-				<ul>
-					{% for skill in event_data.skills %}
-						<li>{{ skill }}</li>
-					{% endfor %}
-				</ul>
-			{% else %}
-				<p>No skills listed for this event.</p>
-			{% endif %}
-		</div>
+    <!-- Skills Section -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h4>Skills</h4>
+            {% if event_data.skills %}
+                <ul>
+                    {% for skill in event_data.skills %}
+                        <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No skills listed for this event.</p>
+            {% endif %}
+        </div>
 
-		<!-- Languages Section -->
-		<div class="col-md-6">
-			<h4>Languages</h4>
-			{% if event_data.languages %}
-				<ul>
-					{% for language in event_data.languages %}
-						<li>{{ language }}</li>
-					{% endfor %}
-				</ul>
-			{% else %}
-				<p>No languages listed for this event.</p>
-			{% endif %}
-		</div>
-	</div>
+        <!-- Languages Section -->
+        <div class="col-md-6">
+            <h4>Languages</h4>
+            {% if event_data.languages %}
+                <ul>
+                    {% for language in event_data.languages %}
+                        <li>{{ language }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No languages listed for this event.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- Volunteer Sections for Event Organizer -->
+    {% if is_event_organizer %}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h4>Volunteers</h4>
+
+                <!-- Accepted Volunteers -->
+                <h5>Accepted Volunteers</h5>
+                {% if accepted_volunteers %}
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Last Updated At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vol in accepted_volunteers %}
+                                <tr>
+                                    <td>{{ vol.0 }}</td>
+                                    <td>{{ vol.1 }}</td>
+                                    <td>{{ vol.2 }}</td>
+                                    <td>{{ vol.3|date:"Y-m-d H:i:s" }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm">Reject</button>
+                                        <button class="btn btn-warning btn-sm">Pending</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No accepted volunteers.</p>
+                {% endif %}
+
+                <!-- Pending Volunteers -->
+                <h5>Pending Volunteers</h5>
+                {% if pending_volunteers %}
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Last Updated At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vol in pending_volunteers %}
+                                <tr>
+                                    <td>{{ vol.0 }}</td>
+                                    <td>{{ vol.1 }}</td>
+                                    <td>{{ vol.2 }}</td>
+                                    <td>{{ vol.3|date:"Y-m-d H:i:s" }}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm">Accept</button>
+                                        <button class="btn btn-danger btn-sm">Reject</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No pending volunteers.</p>
+                {% endif %}
+
+                <!-- Rejected Volunteers -->
+                <h5>Rejected Volunteers</h5>
+                {% if rejected_volunteers %}
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Rejected At</th>
+                                <th>Rejection Reason</th>
+                                <th>Last Updated At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vol in rejected_volunteers %}
+                                <tr>
+                                    <td>{{ vol.0 }}</td>
+                                    <td>{{ vol.1 }}</td>
+                                    <td>{{ vol.2 }}</td>
+                                    <td>{{ vol.3|date:"Y-m-d H:i:s" }}</td>
+                                    <td>{{ vol.4 }}</td>
+                                    <td>{{ vol.5|date:"Y-m-d H:i:s" }}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm">Accept</button>
+                                        <button class="btn btn-warning btn-sm">Pending</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No rejected volunteers.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 
     <hr>
     <div class="text-center">
