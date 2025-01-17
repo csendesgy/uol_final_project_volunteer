@@ -838,6 +838,7 @@ def event_page(request, event_id):
     accepted_volunteers = []
     pending_volunteers = []
     rejected_volunteers = []
+    org_profile = None 
 
     try:
         with cx_Oracle.connect(
@@ -936,6 +937,62 @@ def event_page(request, event_id):
                 
                 #if user and not is_volunteer and user.extension.is_org and row[10] == user.extension.profiles_org_id:
                 if org_profile and org_profile.profiles_org_id == row[10]:
+                    # Handle POST actions (Accept, Reject, Pending)
+                    if request.method == 'POST':
+                        action = request.POST.get('action')
+                        profiles_vol_id = request.POST.get('profiles_vol_id')
+                        reject_reason = request.POST.get('reject_reason', '')
+                        profiles_vol_id = int(profiles_vol_id)  # Ensure profiles_vol_id is an integer
+                        reject_reason = str(reject_reason.strip().replace("'", "''").replace(";", " "))
+
+                        if action and profiles_vol_id:
+                            if action == 'accept':
+                                # Update to accept the volunteer
+                                cursor.execute("""
+                                    UPDATE uni_project.event_enrollment
+                                    SET is_accepted = 'Y',
+                                        accepted_at = SYSDATE,
+                                        is_rejected = 'N',
+                                        rejected_at = NULL,
+                                        reject_reason = NULL,
+                                        last_updated_at = SYSDATE
+                                    WHERE event_id = :1 AND profiles_vol_id = :2
+                                """, [event_id, profiles_vol_id])
+
+                            elif action == 'pending':
+                                # Update to reset the status to pending
+                                cursor.execute("""
+                                    UPDATE uni_project.event_enrollment
+                                    SET is_accepted = NULL,
+                                        accepted_at = NULL,
+                                        is_rejected = NULL,
+                                        rejected_at = NULL,
+                                        reject_reason = NULL,
+                                        last_updated_at = SYSDATE
+                                    WHERE event_id = :1 AND profiles_vol_id = :2
+                                """, [event_id, profiles_vol_id])
+
+                            elif action == 'reject' and reject_reason.strip():
+                                query = f"""
+                                        UPDATE uni_project.event_enrollment
+                                        SET is_accepted = NULL,
+                                            accepted_at = NULL,
+                                            is_rejected = 'Y',
+                                            rejected_at = SYSDATE,
+                                            reject_reason = '{reject_reason}',
+                                            last_updated_at = SYSDATE
+                                        WHERE event_id = {event_id} AND profiles_vol_id = {profiles_vol_id}
+                                    """
+                                # debug
+                                # print("Generated SQL Query:")
+                                # print(query)
+                                cursor.execute(query)
+
+                            # Commit the changes and refresh the page
+                            connection.commit()
+                            messages.success(request, f"Action '{action}' performed successfully.")
+                            return redirect('event_page', event_id=event_id)
+                    
                     # Accepted volunteers
                     cursor.execute("""
                         SELECT au.first_name, au.last_name, au.email, et.last_updated_at, et.profiles_vol_id

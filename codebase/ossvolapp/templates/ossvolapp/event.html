@@ -87,8 +87,19 @@
                                     <td>{{ vol.2 }}</td>
                                     <td>{{ vol.3|date:"Y-m-d H:i:s" }}</td>
                                     <td>
-                                        <button class="btn btn-danger btn-sm">Reject</button>
-                                        <button class="btn btn-warning btn-sm">Pending</button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="event_id" value="{{ event_id }}">
+                                            <input type="hidden" name="profiles_vol_id" value="{{ vol.4 }}">
+                                            <button type="submit" name="action" value="pending" class="btn btn-warning btn-sm">Pending</button>
+                                        </form>
+										<form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="event_id" value="{{ event_id }}">
+											<input type="hidden" name="profiles_vol_id" value="{{ vol.4 }}">
+											<input type="text" name="reject_reason" placeholder="Rejection Reason" class="form-control form-control-sm d-inline w-auto" required>
+											<button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -119,8 +130,19 @@
                                     <td>{{ vol.2 }}</td>
                                     <td>{{ vol.3|date:"Y-m-d H:i:s" }}</td>
                                     <td>
-                                        <button class="btn btn-success btn-sm">Accept</button>
-                                        <button class="btn btn-danger btn-sm">Reject</button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="event_id" value="{{ event_id }}">
+                                            <input type="hidden" name="profiles_vol_id" value="{{ vol.4 }}">
+                                            <button type="submit" name="action" value="accept" class="btn btn-success btn-sm">Accept</button>
+                                        </form>
+										<form method="post" class="d-inline">
+                                            {% csrf_token %}
+											<input type="hidden" name="event_id" value="{{ event_id }}">
+											<input type="hidden" name="profiles_vol_id" value="{{ vol.4 }}">
+											<input type="text" name="reject_reason" placeholder="Rejection Reason" class="form-control form-control-sm d-inline w-auto" required>
+											<button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -155,8 +177,13 @@
                                     <td>{{ vol.4 }}</td>
                                     <td>{{ vol.5|date:"Y-m-d H:i:s" }}</td>
                                     <td>
-                                        <button class="btn btn-success btn-sm">Accept</button>
-                                        <button class="btn btn-warning btn-sm">Pending</button>
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="event_id" value="{{ event_data.organizer_id }}">
+                                            <input type="hidden" name="profiles_vol_id" value="{{ vol.6 }}">
+                                            <button type="submit" name="action" value="accept" class="btn btn-success btn-sm">Accept</button>
+                                            <button type="submit" name="action" value="pending" class="btn btn-warning btn-sm">Pending</button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -193,5 +220,7 @@
             <a href="{% url 'login' %}" class="btn btn-secondary">Log In</a>
         {% endif %}
     </div>
+
 </div>
+
 {% endblock %}
