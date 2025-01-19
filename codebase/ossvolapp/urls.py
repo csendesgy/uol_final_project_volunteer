@@ -21,4 +21,5 @@ urlpatterns = [
     path('event_maintenance/', views.create_edit_event, name='eventmaint'),
     path('event/<int:event_id>/', views.event_page, name='event_page'),  # Normal view for the event page
     path('api/event/<int:event_id>/', EventAPIView.as_view(), name='event_api'),  # API view for event data
+    path('find-event/', views.find_event, name='find_event'), # search page
 ]

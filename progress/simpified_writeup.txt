@@ -250,3 +250,26 @@ events.html
 # uimplement pending / approved / rejected volunteers 
 views.py
 event.html
+
+18/01/2025
+# event search
+pip install geopy
+pip install uszipcode # turns out, not working
+pip install pgeocode # replacement
+header.html
+views.py
+find_event.html
+urls.py
+
+
+
+
+
+
+
+
+
+
+
+
+

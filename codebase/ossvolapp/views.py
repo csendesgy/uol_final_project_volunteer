@@ -11,6 +11,10 @@ from django.db.models.functions import Upper
 from .models import *
 import base64
 import cx_Oracle
+from geopy.distance import geodesic
+import pgeocode
+import datetime
+
 
 def index_view(request):
     return render(request, 'index.html')  # Public landing page
@@ -1074,4 +1078,88 @@ def event_page(request, event_id):
         'is_event_organizer': org_profile and event_data['organizer_id'] == org_profile.profiles_org_id,
     })
 
+from django.db.models import Q
 
+
+def find_event(request):
+    query = Event.objects.all()
+    zip_code = request.GET.get("zip_code")
+    distance = request.GET.get("distance")
+    date = request.GET.get("date")
+    org_name = request.GET.get("organization_name")
+    selected_skills = request.GET.getlist("skills")
+    selected_languages = request.GET.getlist("languages")
+    skill_search_text = request.GET.get("skill_text")
+
+    # Filter by distance using pgeocode
+    if zip_code and distance:
+        nomi = pgeocode.Nominatim("us")
+        origin = nomi.query_postal_code(zip_code)
+        if origin.latitude and origin.longitude:
+            # Get all unique event zip codes
+            event_zips = Event.objects.values_list('event_zip', flat=True).distinct()
+            valid_zips = []
+            for event_zip in event_zips:
+                destination = nomi.query_postal_code(str(event_zip))
+                if (
+                    destination.latitude
+                    and destination.longitude
+                    and geodesic((origin.latitude, origin.longitude), 
+                                 (destination.latitude, destination.longitude)).miles <= float(distance)
+                ):
+                    valid_zips.append(event_zip)
+            query = query.filter(event_zip__in=valid_zips)
+
+    # Filter by date
+    if date:
+        query = query.filter(event_date=date)
+    else:
+        query = query.filter(
+            event_date__gte=datetime.date.today(),
+            application_deadline__gte=datetime.date.today()
+        )
+
+    # Filter by organization name
+    if org_name:
+        query = query.filter(profiles_org_id__org_name__icontains=org_name)
+
+    # Filter by skills
+    if selected_skills:
+        query = query.filter(eventskill__skill_id__in=selected_skills).distinct()
+
+    # Filter by skill text search
+    if skill_search_text:
+        query = query.filter(
+            eventskill__skill_id__skill_name__icontains=skill_search_text
+        ).distinct()
+
+    # Filter by languages
+    if selected_languages:
+        query = query.filter(eventtranslatelanguage__target_language_id__in=selected_languages).distinct()
+
+    # Fetch available skills and ensure "Light Physical Work" is always present
+    dynamic_skills = Skill.objects.filter(
+        eventskill__event_id__event_date__gte=datetime.date.today()
+    ).distinct()[:2]
+    mandatory_skill = Skill.objects.filter(skill_name="Light Physical Work").first()
+    skills = [mandatory_skill] + list(dynamic_skills) if mandatory_skill else list(dynamic_skills)
+
+    # Fetch all languages
+    languages = Language.objects.all()
+
+    # Fetch all organizations
+    organizations = ProfilesOrg.objects.all()
+
+    # If no results, find suggestions
+    if not query.exists():
+        suggestions = Event.objects.filter(event_date__gte=datetime.date.today())[:5]
+    else:
+        suggestions = []
+
+    return render(request, 'find_event.html', {
+        'events': query,
+        'skills': skills,
+        'languages': languages,
+        'organizations': organizations,
+        'suggestions': suggestions,
+    })

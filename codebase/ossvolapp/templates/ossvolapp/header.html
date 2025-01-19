@@ -24,6 +24,7 @@
 			<div class="w-100 d-flex justify-content-between">
 				<ul class="navbar-nav" id="navigation1">
 					<li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+					<li class="nav-item"><a class="nav-link" href="{% url 'find_event' %}">Find Events</a></li>
 				</ul>
 				<ul class="navbar-nav" id="navigation2">
 						{% if user.is_superuser and user.is_active %}
