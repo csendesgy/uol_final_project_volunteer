@@ -1081,34 +1081,39 @@ def event_page(request, event_id):
 from django.db.models import Q
 
 
+import datetime
+import pgeocode
+
 def find_event(request):
-    query = Event.objects.all()
+    query = Event.objects.defer('event_image').all()  # Exclude BLOB field
     zip_code = request.GET.get("zip_code")
     distance = request.GET.get("distance")
     date = request.GET.get("date")
     org_name = request.GET.get("organization_name")
     selected_skills = request.GET.getlist("skills")
-    selected_languages = request.GET.getlist("languages")
     skill_search_text = request.GET.get("skill_text")
+    selected_languages = request.GET.getlist("languages")
+    language_search_text = request.GET.get("language_text")
 
-    # Filter by distance using pgeocode
+    # Filter by distance using pgeocode.GeoDistance
     if zip_code and distance:
-        nomi = pgeocode.Nominatim("us")
-        origin = nomi.query_postal_code(zip_code)
-        if origin.latitude and origin.longitude:
-            # Get all unique event zip codes
+        try:
+            dist = pgeocode.GeoDistance("us")
             event_zips = Event.objects.values_list('event_zip', flat=True).distinct()
             valid_zips = []
             for event_zip in event_zips:
-                destination = nomi.query_postal_code(str(event_zip))
-                if (
-                    destination.latitude
-                    and destination.longitude
-                    and geodesic((origin.latitude, origin.longitude), 
-                                 (destination.latitude, destination.longitude)).miles <= float(distance)
-                ):
+                # Ensure event_zip is a string for compatibility
+                event_zip_str = str(event_zip)
+                calculated_distance = dist.query_postal_code(str(zip_code), event_zip_str)
+                if calculated_distance <= float(distance):
                     valid_zips.append(event_zip)
+            
+            # Debugging distances
+            # print(f"Valid ZIPs within {distance} miles of {zip_code}: {valid_zips}")
             query = query.filter(event_zip__in=valid_zips)
+        except Exception as e:
+            # print(f"Error during distance calculation: {e}")
+            query = query.none()
 
     # Filter by date
     if date:
@@ -1129,20 +1134,58 @@ def find_event(request):
 
     # Filter by skill text search
     if skill_search_text:
-        query = query.filter(
-            eventskill__skill_id__skill_name__icontains=skill_search_text
-        ).distinct()
+        query = query.filter(eventskill__skill_id__skill_name__icontains=skill_search_text).distinct()
 
     # Filter by languages
     if selected_languages:
         query = query.filter(eventtranslatelanguage__target_language_id__in=selected_languages).distinct()
 
-    # Fetch available skills and ensure "Light Physical Work" is always present
-    dynamic_skills = Skill.objects.filter(
-        eventskill__event_id__event_date__gte=datetime.date.today()
-    ).distinct()[:2]
+    # Filter by language text search
+    if language_search_text:
+        query = query.filter(
+            eventtranslatelanguage__target_language_id__language__icontains=language_search_text
+        ).distinct()
+
+    # Fetch all skills for the "Search Skills" textbox
+    all_skills = Skill.objects.all()
+
+    # Fetch "Light Physical Work" skill as the mandatory skill
     mandatory_skill = Skill.objects.filter(skill_name="Light Physical Work").first()
-    skills = [mandatory_skill] + list(dynamic_skills) if mandatory_skill else list(dynamic_skills)
+
+    # Fetch all unique skills from upcoming events, excluding "Light Physical Work"
+    unique_skills = Skill.objects.filter(
+        eventskill__event_id__event_date__gte=datetime.date.today(),
+        eventskill__event_id__isnull=False
+    ).exclude(skill_name="Light Physical Work").distinct()
+
+    # Convert unique_skills to a list to avoid further evaluation
+    unique_skills = list(unique_skills)
+
+    # Limit to 2 skills
+    random_skills = unique_skills[:2]
+
+    # DEBUG
+    # print("Mandatory Skill:", mandatory_skill)
+    # print("Unique Skills:", unique_skills)
+    # print("Random Skills (limited):", random_skills)
+
+    # Combine the mandatory skill and random skills, ensuring uniqueness
+    skills_checkbox = []
+    seen_skill_ids = set()  # To track added skill IDs
+
+    # Add mandatory skill
+    if mandatory_skill and mandatory_skill.skill_id not in seen_skill_ids:
+        skills_checkbox.append(mandatory_skill)
+        seen_skill_ids.add(mandatory_skill.skill_id)
+
+    # Add random skills
+    for skill in random_skills:
+        if skill.skill_id not in seen_skill_ids:
+            skills_checkbox.append(skill)
+            seen_skill_ids.add(skill.skill_id)
+
+    # Debug
+    # print("Skills checkbox:", skills_checkbox)
 
     # Fetch all languages
     languages = Language.objects.all()
@@ -1158,7 +1201,8 @@ def find_event(request):
 
     return render(request, 'find_event.html', {
         'events': query,
-        'skills': skills,
+        'skills': all_skills,
+        'skills_checkbox': skills_checkbox,
         'languages': languages,
         'organizations': organizations,
         'suggestions': suggestions,

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center">Find Event</h2>
+    <h2 class="text-center">Find Upcoming Event</h2>
     <form method="get" action="{% url 'find_event' %}">
         <div class="row mb-3">
             <div class="col-md-2">
@@ -23,10 +23,22 @@
             </div>
         </div>
         <div class="row mb-3">
+            <!-- Search Skills -->
+            <div class="col-md-4">
+                <label for="skill_text">Search Skills:</label>
+                <input type="text" name="skill_text" id="skill_text" class="form-control" placeholder="Search for Skills" list="skills-list">
+                <datalist id="skills-list">
+                    {% for skill in skills %}
+                    <option value="{{ skill.skill_name }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <!-- Skills Checkbox -->
             <div class="col-md-4">
                 <label for="skill-checkboxes">Skills:</label>
                 <div id="skill-checkboxes">
-                    {% for skill in skills %}
+                    {% for skill in skills_checkbox %}
                     <div class="form-check">
                         <input type="checkbox" name="skills" value="{{ skill.skill_id }}" class="form-check-input" id="skill_{{ skill.skill_id }}">
                         <label class="form-check-label" for="skill_{{ skill.skill_id }}">{{ skill.skill_name }}</label>
@@ -34,17 +46,16 @@
                     {% endfor %}
                 </div>
             </div>
+
+            <!-- Search Languages -->
             <div class="col-md-4">
-                <label for="skill_text">Search Skills:</label>
-                <input type="text" name="skill_text" id="skill_text" class="form-control" placeholder="Search for Skills">
-            </div>
-            <div class="col-md-4">
-                <label for="languages">Languages:</label>
-                <select name="languages" multiple class="form-select" id="languages">
+                <label for="language_text">Search Languages:</label>
+                <input type="text" name="language_text" id="language_text" class="form-control" placeholder="Search for Languages" list="languages-list">
+                <datalist id="languages-list">
                     {% for language in languages %}
-                    <option value="{{ language.language_id }}">{{ language.language }}</option>
+                    <option value="{{ language.language }}"></option>
                     {% endfor %}
-                </select>
+                </datalist>
             </div>
         </div>
         <div class="row mb-3">
@@ -63,7 +74,7 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">{{ event.event_name }}</h5>
-                    <p class="card-text">Org: {{ event.profiles_org_id.org_name }}</p>
+                    <p class="card-text">Organization: {{ event.profiles_org_id.org_name }}</p>
                     <p class="card-text">Date: {{ event.event_date }}</p>
                     <p class="card-text">ZIP: {{ event.event_zip }}</p>
                     <a href="{% url 'event_page' event.event_id %}" class="btn btn-primary">Go to Event</a>
@@ -80,7 +91,7 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">{{ suggestion.event_name }}</h5>
-                    <p class="card-text">Org: {{ suggestion.profiles_org_id.org_name }}</p>
+                    <p class="card-text">Organization: {{ suggestion.profiles_org_id.org_name }}</p>
                     <p class="card-text">Date: {{ suggestion.event_date }}</p>
                     <p class="card-text">ZIP: {{ suggestion.event_zip }}</p>
                     <a href="{% url 'event_page' suggestion.event_id %}" class="btn btn-primary">Go to Event</a>

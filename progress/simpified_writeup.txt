@@ -261,8 +261,9 @@ views.py
 find_event.html
 urls.py
 
-
-
+20/01/2025
+# event search
+keep fixing the search functionality
 
 
 
