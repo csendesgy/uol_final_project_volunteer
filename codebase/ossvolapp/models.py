@@ -135,3 +135,35 @@ class EventEnrollment(models.Model):
     class Meta:
         db_table = 'event_enrollment'
         unique_together = ('event_id', 'profiles_vol_id')  
+
+class Recommendation(models.Model):
+    recommendation_id = models.BigAutoField(primary_key=True)
+    event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id', related_name='recommendations')
+    from_org_id = models.ForeignKey('ProfilesOrg', on_delete=models.CASCADE, db_column='from_org_id', null=True, blank=True, related_name='sent_recommendations')
+    from_vol_id = models.ForeignKey('ProfilesVolunteer', on_delete=models.CASCADE, db_column='from_vol_id', null=True, blank=True, related_name='vol_sent_recommendations')
+    to_vol_id = models.ForeignKey('ProfilesVolunteer', on_delete=models.CASCADE, db_column='to_vol_id', related_name='received_recommendations')
+    recommendation_msg = models.CharField(max_length=200, null=True, blank=True)
+
+    class Meta:
+        db_table = "recommendations"
+
+
+class EventChat(models.Model):
+    chat_id = models.BigAutoField(primary_key=True)
+    event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id', related_name='chats')
+    event_chat_name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "event_chat"
+
+
+class EventChatHistory(models.Model):
+    chat_log_id = models.BigAutoField(primary_key=True)
+    chat_id = models.ForeignKey('EventChat', on_delete=models.CASCADE, db_column='chat_id', related_name='chat_logs')
+    from_org_id = models.ForeignKey('ProfilesOrg', on_delete=models.CASCADE, db_column='from_org_id', null=True, blank=True, related_name='org_chat_logs')
+    from_vol_id = models.ForeignKey('ProfilesVolunteer', on_delete=models.CASCADE, db_column='from_vol_id', null=True, blank=True, related_name='vol_chat_logs')
+    msg = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "event_chat_history"

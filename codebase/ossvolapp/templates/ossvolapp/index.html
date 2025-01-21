@@ -1,30 +1,38 @@
 {% extends "base.html" %}
-	{% block content %}
-	<div class="container-fluid">
-		<div class="white-section">
-			<div>
-				<h3>Add some image here</h3>
-			</div>
-			<div class="welcome-box">
-				<h3>Welcome to the site!</h3>
-				<p>This page is designed to simplify search for volunteer opportunities.</p>
-				<p>You can browse opportinities from multiple organizations or register your organization and post such events.</p>
-			</div>
-		</div>
-		<div class="gray-section">
-			<div class="container-fluid">
-				<h2>Upcoming Events</h2>
-				<div class="event-card">
-					<h2>20 January - Org Name 1</h2>
-					<p>Event description</p>
-					<p>Postal Code: 33541</p>
-				</div>
-				<div class="event-card">
-					<h2>28 January - Org Name 2</h2>
-					<p>Event description</p>
-					<p>Postal Code: 33610</p>
-				</div>
-			</div>
-		</div>
-	</div>
+{% block content %}
+<div class="container-fluid">
+    <div class="white-section">
+        <div class="welcome-box">
+            <h3>Welcome to the site!</h3>
+            <p>This page is designed to simplify the search for volunteer opportunities.</p>
+            <p>You can browse opportunities from multiple organizations or register your organization and post such events.</p>
+        </div>
+    </div>
+    <div class="gray-section">
+        <div class="container-fluid">
+            <h2 class="text-center">Explore Upcoming Events</h2>
+            {% if random_events %}
+                <div class="row">
+                    {% for event in random_events %}
+                    <div class="col-md-4">
+                        <div class="event-card border p-3 mb-4 shadow-sm">
+                            <h4 class="mb-2">{{ event.event_name }}</h4>
+							{% if event.event_image %}
+							<img src="data:image/jpeg;base64,{{ event.event_image }}" alt="Event Image" class="img-thumbnail mb-2" style="width: 100px; height: 100px; object-fit: cover;">							
+							{% endif %}
+                            <p><strong>Organization:</strong> {{ event.profiles_org_id.org_name }}</p>
+                            <p><strong>Date:</strong> {{ event.event_date|date:"Y-m-d" }}</p>
+                            <p><strong>ZIP Code:</strong> {{ event.event_zip }}</p>
+                            <p>{{ event.event_description|truncatechars:100 }}</p>
+                            <a href="{% url 'event_page' event.event_id %}" class="btn btn-primary btn-sm">Go to Event</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted mt-4">No upcoming events to explore at the moment.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

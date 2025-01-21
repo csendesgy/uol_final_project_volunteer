@@ -40,6 +40,7 @@
                             <a href="{% url 'notimplemented' %}" class="btn btn-success btn-sm">Go to Chat</a>
                             {% if is_org %}
                             <a href="{% url 'eventmaint' %}?event_id={{ event.0 }}" class="btn btn-warning btn-sm">Edit Event</a>
+							<a href="{% url 'eventrecommend' event.0 %}" class="btn btn-info btn-sm">Recommend</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -71,7 +72,7 @@
                         <td>{{ event.2 }}</td>
                         <td>{{ event.3|date:"Y-m-d" }}</td>
                         <td>
-                            <a href="{% url 'notimplemented' %}" class="btn btn-primary btn-sm">Go to Event</a>
+                            <a href="{% url 'event_page' event.0 %}" class="btn btn-primary btn-sm">Go to Event</a>
                             <a href="{% url 'notimplemented' %}" class="btn btn-success btn-sm">Go to Chat</a>
                         </td>
                     </tr>

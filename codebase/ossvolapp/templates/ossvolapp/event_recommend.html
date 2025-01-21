@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Recommend Volunteers for {{ event.event_name }}</h2>
+
+    <!-- Eligible Volunteers Section -->
+    {% if annotated_volunteers %}
+        <h3>Eligible Volunteers</h3>
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Volunteer Name</th>
+                    <th>Skills</th>
+                    <th>Languages</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in annotated_volunteers %}
+                <tr>
+                    <td>{{ data.volunteer.user.first_name }} {{ data.volunteer.user.last_name }}</td>
+                    <td>
+                        {% for skill in data.volunteer.volunteerskill_set.all %}
+                            {% if skill.skill in data.matching_skills %}
+                                <strong class="text-success">{{ skill.skill.skill_name }}</strong>
+                            {% else %}
+                                {{ skill.skill.skill_name }}
+                            {% endif %}
+                            {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if data.volunteer.willing_to_light_physical == 'Y' and 'Light Physical Work' in data.matching_skills %}
+                            , <strong class="text-success">Light Physical Work</strong>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for lang in data.volunteer.volunteerlanguage_set.all %}
+                            {% if lang.language in data.matching_languages %}
+                                <strong class="text-success">{{ lang.language.language }} ({{ lang.languages_level.languages_level }})</strong>
+                            {% else %}
+                                {{ lang.language.language }} ({{ lang.languages_level.languages_level }})
+                            {% endif %}
+                            {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="to_vol_id" value="{{ data.volunteer.profiles_vol_id }}">
+                            <textarea name="recommendation_msg" class="form-control mb-2" placeholder="Write a message" required></textarea>
+                            <button type="submit" class="btn btn-success btn-sm">Recommend</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center text-muted mt-4">No eligible volunteers match the criteria for this event.</p>
+    {% endif %}
+
+    <!-- Pending Recommendations Section -->
+    {% if pending_volunteers %}
+        <h3 class="mt-5">Pending Approvals</h3>
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Volunteer Name</th>
+                    <th>Skills</th>
+                    <th>Languages</th>
+                    <th>Recommendation Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in pending_volunteers %}
+                <tr>
+                    <td>{{ data.volunteer.user.first_name }} {{ data.volunteer.user.last_name }}</td>
+                    <td>
+                        {% for skill in data.volunteer.volunteerskill_set.all %}
+                            {% if skill.skill in data.matching_skills %}
+                                <strong class="text-success">{{ skill.skill.skill_name }}</strong>
+                            {% else %}
+                                {{ skill.skill.skill_name }}
+                            {% endif %}
+                            {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if data.volunteer.willing_to_light_physical == 'Y' and 'Light Physical Work' in data.matching_skills %}
+                            , <strong class="text-success">Light Physical Work</strong>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for lang in data.volunteer.volunteerlanguage_set.all %}
+                            {% if lang.language in data.matching_languages %}
+                                <strong class="text-success">{{ lang.language.language }} ({{ lang.languages_level.languages_level }})</strong>
+                            {% else %}
+                                {{ lang.language.language }} ({{ lang.languages_level.languages_level }})
+                            {% endif %}
+                            {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ data.recommendation_msg }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center text-muted mt-4">No pending recommendations for this event.</p>
+    {% endif %}
+</div>
+{% endblock %}

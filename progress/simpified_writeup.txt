@@ -265,6 +265,16 @@ urls.py
 # event search
 keep fixing the search functionality
 
+21/01/2025
+#event recommendation
+views.py
+event_recommend.html
+urls.py
+events.html
+# proper event display on HOME and INDEX instead of dummy + fix home button in header.
+home.html
+index.html
+
 
 
 

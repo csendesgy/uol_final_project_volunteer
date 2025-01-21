@@ -8,16 +8,31 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction, connection
 from django.db.models.functions import Upper
+from django.db.models import Q
 from .models import *
 import base64
 import cx_Oracle
-from geopy.distance import geodesic
 import pgeocode
 import datetime
 
 
 def index_view(request):
-    return render(request, 'index.html')  # Public landing page
+    # Fetch up to 3 random upcoming events
+    random_events = Event.objects.filter(
+            event_date__gte=datetime.date.today()
+        ).order_by('?')[:6]
+
+    # Process event images
+    for event in random_events:
+        if event.event_image:
+            event.event_image = base64.b64encode(event.event_image).decode('utf-8')
+        else:
+            event.event_image = None
+
+    return render(request, 'index.html', { # Public landing page
+        'random_events': random_events,
+    })
+
 
 def notimp_view(request):
     return render(request, 'notimplemented.html')  # Function not implemented
@@ -39,7 +54,81 @@ def login_view(request):
 def home_view(request):
     if not request.user.is_authenticated:  # Redirect unauthenticated users to index.html
         return redirect('index')
-    return render(request, 'home.html')  # Page for logged-in users
+
+    user = request.user
+
+    # Check if the user is a volunteer
+    is_volunteer = ProfilesVolunteer.objects.filter(user=user).exists()
+
+    recommendations = []
+    enrolled_events = []
+    random_events = []
+
+    if is_volunteer:
+        # Fetch the volunteer profile
+        volunteer = ProfilesVolunteer.objects.get(user=user)
+
+        # Fetch recommendations for the volunteer that are not yet applied
+        recommendations = Recommendation.objects.filter(
+            to_vol_id=volunteer.profiles_vol_id
+        ).exclude(
+            event_id__in=EventEnrollment.objects.filter(profiles_vol_id=volunteer.profiles_vol_id).values_list('event_id', flat=True)
+        ).select_related('event_id', 'event_id__profiles_org_id')
+
+        # Process event images
+        for rec in recommendations:
+            if rec.event_id.event_image:
+                rec.event_id.event_image = base64.b64encode(rec.event_id.event_image).decode('utf-8')
+            else:
+                rec.event_id.event_image = None
+
+        # Prepare recommendations data
+        recommendations = [{
+            'event_id': rec.event_id.event_id,
+            'event_name': rec.event_id.event_name,
+            'org_name': rec.event_id.profiles_org_id.org_name,
+            'event_date': rec.event_id.event_date,
+            'event_zip': rec.event_id.event_zip,
+            'event_description': rec.event_id.event_description,
+            'recommendation_msg': rec.recommendation_msg,
+            'event_image': rec.event_id.event_image,  # Use processed event_image
+        } for rec in recommendations]
+
+        # Fetch up to 3 enrolled events closest to today
+        enrolled_events = Event.objects.filter(
+            eventenrollment__profiles_vol_id=volunteer.profiles_vol_id,
+            event_date__gte=datetime.date.today()
+        ).order_by('event_date')[:3]
+
+        for event in enrolled_events:
+            if event.event_image:
+                event.event_image = base64.b64encode(event.event_image).decode('utf-8')
+            else:
+                event.event_image = None
+
+        # Fetch up to 3 random events the user is not enrolled in or recommended to
+        random_events = Event.objects.exclude(
+            eventenrollment__profiles_vol_id=volunteer.profiles_vol_id
+        ).exclude(
+            recommendations__to_vol_id=volunteer.profiles_vol_id  # Corrected here
+        ).filter(
+            event_date__gte=datetime.date.today()
+        ).order_by('?')[:3]
+
+        for event in random_events:
+            if event.event_image:
+                event.event_image = base64.b64encode(event.event_image).decode('utf-8')
+            else:
+                event.event_image = None
+
+    return render(request, 'home.html', {
+        'is_volunteer': is_volunteer,
+        'recommendations': recommendations,
+        'enrolled_events': enrolled_events,
+        'random_events': random_events,
+    })
+
+
 
 def logout_view(request):
     logout(request)  # Logs out the user
@@ -1078,12 +1167,6 @@ def event_page(request, event_id):
         'is_event_organizer': org_profile and event_data['organizer_id'] == org_profile.profiles_org_id,
     })
 
-from django.db.models import Q
-
-
-import datetime
-import pgeocode
-
 def find_event(request):
     query = Event.objects.defer('event_image').all()  # Exclude BLOB field
     zip_code = request.GET.get("zip_code")
@@ -1206,4 +1289,125 @@ def find_event(request):
         'languages': languages,
         'organizations': organizations,
         'suggestions': suggestions,
+    })
+
+@login_required
+def event_recommend(request, event_id):
+    user = request.user
+    if not user.extension.is_org:
+        messages.error(request, "You must be an organization to recommend events.")
+        return redirect('events')
+
+    org_profile = ProfilesOrg.objects.filter(user=user).first()
+    if not org_profile:
+        messages.error(request, "Organization profile not found.")
+        return redirect('events')
+
+    event = Event.objects.filter(event_id=event_id, profiles_org_id=org_profile.profiles_org_id).first()
+    if not event:
+        messages.error(request, "You can only recommend your own events.")
+        return redirect('events')
+
+    # Handle POST request to submit a recommendation
+    if request.method == 'POST':
+        to_vol_id = request.POST.get('to_vol_id')
+        recommendation_msg = request.POST.get('recommendation_msg', '').strip()
+
+        # Ensure the volunteer exists and matches criteria
+        volunteer = ProfilesVolunteer.objects.filter(
+            profiles_vol_id=to_vol_id,
+            accept_recommendation='Y',
+            visible_to_orgs='Y',
+        ).first()
+
+        if not volunteer:
+            messages.error(request, "Invalid volunteer selected for recommendation.")
+            return redirect('eventrecommend', event_id=event_id)
+
+        # Create a recommendation entry in the database
+        Recommendation.objects.create(
+            event_id=event,
+            from_org_id=org_profile,
+            from_vol_id=None,  # Null for org recommendations
+            to_vol_id=volunteer,
+            recommendation_msg=recommendation_msg
+        )
+
+        messages.success(request, f"Recommendation sent to {volunteer.user.first_name} {volunteer.user.last_name}.")
+        return redirect('eventrecommend', event_id=event_id)
+
+    # Fetch event skills and languages
+    event_skills = list(EventSkill.objects.filter(event_id=event_id).values_list('skill_id', flat=True))
+    event_languages = list(EventTranslateLanguage.objects.filter(event_id=event_id).values_list('target_language_id', flat=True))
+
+    # Add special handling for "Light Physical Work"
+    light_physical_skill = Skill.objects.filter(skill_name="Light Physical Work").first()
+
+    # Build the query filter for eligible volunteers
+    query_filter = models.Q(
+        volunteerskill__skill_id__in=event_skills
+    ) | models.Q(
+        volunteerlanguage__language_id__in=event_languages, willing_to_translate='Y'
+    )
+
+    if light_physical_skill and light_physical_skill.skill_id in event_skills:
+        query_filter |= models.Q(willing_to_light_physical='Y')
+
+    # Fetch eligible volunteers, excluding BLOB fields
+    eligible_volunteers = ProfilesVolunteer.objects.defer('profile_image_vol').filter(
+        accept_recommendation='Y',
+        visible_to_orgs='Y',
+    ).exclude(
+        profiles_vol_id__in=EventEnrollment.objects.filter(event_id=event_id).values_list('profiles_vol_id', flat=True)
+    ).exclude(
+        profiles_vol_id__in=Recommendation.objects.filter(event_id=event_id).values_list('to_vol_id', flat=True)
+    ).filter(query_filter).distinct()
+
+    # Annotate each volunteer with matching skills and languages
+    annotated_volunteers = []
+    for volunteer in eligible_volunteers:
+        volunteer_skills = list(volunteer.volunteerskill_set.values_list('skill_id', flat=True))
+        volunteer_languages = list(volunteer.volunteerlanguage_set.values_list('language_id', flat=True))
+
+        matching_skills = [skill for skill in Skill.objects.filter(skill_id__in=event_skills) if skill.skill_id in volunteer_skills]
+        if light_physical_skill and volunteer.willing_to_light_physical == 'Y' and light_physical_skill.skill_id in event_skills:
+            matching_skills.append(light_physical_skill)
+
+        matching_languages = [language for language in Language.objects.filter(language_id__in=event_languages) if language.language_id in volunteer_languages]
+
+        annotated_volunteers.append({
+            'volunteer': volunteer,
+            'matching_skills': matching_skills,
+            'matching_languages': matching_languages,
+        })
+
+    # Fetch pending recommendations (recommended but not applied)
+    pending_recommendations = Recommendation.objects.filter(event_id=event_id).exclude(
+        to_vol_id__in=EventEnrollment.objects.filter(event_id=event_id).values_list('profiles_vol_id', flat=True)
+    )
+
+    pending_volunteers = []
+    for recommendation in pending_recommendations:
+        volunteer = recommendation.to_vol_id
+        volunteer_skills = list(volunteer.volunteerskill_set.values_list('skill_id', flat=True))
+        volunteer_languages = list(volunteer.volunteerlanguage_set.values_list('language_id', flat=True))
+
+        matching_skills = [skill for skill in Skill.objects.filter(skill_id__in=event_skills) if skill.skill_id in volunteer_skills]
+        if light_physical_skill and volunteer.willing_to_light_physical == 'Y' and light_physical_skill.skill_id in event_skills:
+            matching_skills.append(light_physical_skill)
+
+        matching_languages = [language for language in Language.objects.filter(language_id__in=event_languages) if language.language_id in volunteer_languages]
+
+        pending_volunteers.append({
+            'volunteer': volunteer,
+            'matching_skills': matching_skills,
+            'matching_languages': matching_languages,
+            'recommendation_msg': recommendation.recommendation_msg,
+        })
+
+    return render(request, 'event_recommend.html', {
+        'event': event,
+        'annotated_volunteers': annotated_volunteers,
+        'pending_volunteers': pending_volunteers,
+        #'recommendation_msg': recommendation.recommendation_msg,  
     })

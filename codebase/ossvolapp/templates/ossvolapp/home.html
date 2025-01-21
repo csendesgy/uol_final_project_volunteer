@@ -1,30 +1,140 @@
 {% extends "base.html" %}
 {% block content %}
-	<div class="container-fluid">
-		<div class="white-section">
-			<div>
-				<h3>Add some image here</h3>
-			</div>
-			<div class="welcome-box">
-				<h3>HOME PAGE</h3>
-				<p>This page is designed to simplify search for volunteer opportunities.</p>
-				<p>You can browse opportinities from multiple organizations or register your organization and post such events.</p>
-			</div>
-		</div>
-		<div class="gray-section">
-			<div class="container-fluid">
-				<h2>Upcoming Events</h2>
-				<div class="event-card">
-					<h2>20 January - Org Name 1</h2>
-					<p>Event description</p>
-					<p>Postal Code: 33541</p>
-				</div>
-				<div class="event-card">
-					<h2>28 January - Org Name 2</h2>
-					<p>Event description</p>
-					<p>Postal Code: 33610</p>
-				</div>
-			</div>
-		</div>
-	</div>
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="white-section">
+        <div class="welcome-box">
+            <p>This page is designed to simplify search for volunteer opportunities.</p>
+            <p>You can browse opportunities from multiple organizations or register your organization and post such events.</p>
+        </div>
+    </div>
+
+    {% if is_volunteer %}
+    <!-- Recommendations Section -->
+    <div class="recommendation-box mt-4">
+        <h3 class="text-center">Recommended Events</h3>
+        {% if recommendations %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Event Image</th>
+                    <th>Event Name</th>
+                    <th>Organization</th>
+                    <th>Date</th>
+                    <th>ZIP Code</th>
+                    <th>Description</th>
+                    <th>Message</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in recommendations %}
+                <tr>
+                    <td>
+                        {% if rec.event_image %}
+                        <img src="data:image/jpeg;base64,{{ rec.event_image }}" alt="Event Image" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <p>No Image</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ rec.event_name }}</td>
+                    <td>{{ rec.org_name }}</td>
+                    <td>{{ rec.event_date|date:"Y-m-d" }}</td>
+                    <td>{{ rec.event_zip }}</td>
+                    <td>{{ rec.event_description }}</td>
+                    <td>{{ rec.recommendation_msg }}</td>
+                    <td>
+                        <a href="{% url 'event_page' rec.event_id %}" class="btn btn-primary btn-sm">Go to Event</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No recommendations available at the moment.</p>
+        {% endif %}
+    </div>
+
+    <!-- Enrolled Events Section -->
+    <div class="enrolled-events-box mt-4">
+        <h3 class="text-center">Your Enrolled Events</h3>
+        {% if enrolled_events %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Event Image</th>
+                    <th>Event Name</th>
+                    <th>Date</th>
+                    <th>ZIP Code</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in enrolled_events %}
+                <tr>
+                    <td>
+                        {% if event.event_image %}
+                        <img src="data:image/jpeg;base64,{{ event.event_image }}" alt="Event Image" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <p>No Image</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.event_name }}</td>
+                    <td>{{ event.event_date|date:"Y-m-d" }}</td>
+                    <td>{{ event.event_zip }}</td>
+                    <td>
+                        <a href="{% url 'event_page' event.event_id %}" class="btn btn-primary btn-sm">Go to Event</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">You are not enrolled in any upcoming events.</p>
+        {% endif %}
+    </div>
+
+    <!-- Random Events Section -->
+    <div class="random-events-box mt-4">
+        <h3 class="text-center">Explore Upcoming Events</h3>
+        {% if random_events %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Event Image</th>
+                    <th>Event Name</th>
+                    <th>Organization</th>
+                    <th>Date</th>
+                    <th>ZIP Code</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in random_events %}
+                <tr>
+                    <td>
+                        {% if event.event_image %}
+                        <img src="data:image/jpeg;base64,{{ event.event_image }}" alt="Event Image" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <p>No Image</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.event_name }}</td>
+                    <td>{{ event.profiles_org_id.org_name }}</td>
+                    <td>{{ event.event_date|date:"Y-m-d" }}</td>
+                    <td>{{ event.event_zip }}</td>
+                    <td>
+                        <a href="{% url 'event_page' event.event_id %}" class="btn btn-primary btn-sm">Go to Event</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No upcoming events to explore at the moment.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
+
