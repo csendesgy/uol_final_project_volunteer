@@ -1,0 +1,228 @@
+/* ossvol.css */
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header */
+#header {
+    background-color: #7CDDEE;
+    padding: 20px;
+    color: black;
+    text-align: center;
+    font-size: 1.5rem;
+    border-bottom: 1px solid #ddd;
+}
+/* Title */
+#application_title {
+    font-family: 'Comic Sans MS', cursive;
+    text-shadow: 2px 2px 3px #ccc;
+    color: black;
+}
+#title_warning{
+    color: red;
+    font-weight: bold;
+}
+
+/* Navigation Bar */
+.navbar {
+    width: 100%;
+    background-color: #F0EDEA; 
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    margin: 0; /* Remove any margin */
+    box-sizing: border-box;
+}
+
+.navbar-nav {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar-nav .nav-item {
+    margin: 0 10px; /* Add spacing between items */
+}
+
+.navbar-nav .nav-link {
+    text-decoration: none;
+    padding: 10px 15px;
+    background-color: #7CDDEE; 
+    border-radius: 5px;
+    font-size: 1rem;
+    color: #333; 
+    font-weight: bold;
+    text-align: center;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: #CCE7FF; 
+}
+
+#navigation1 {
+    justify-content: flex-start; /* Left-aligned */
+	padding-top: 5px;
+}
+
+#navigation2 {
+    justify-content: center; /* Center-aligned */
+	padding-top: 5px;
+}
+
+#navigation3 {
+    justify-content: flex-end; /* Right-aligned */
+	padding-top: 5px;
+}
+
+/* Layout Sections */
+.container-fluid {
+    max-width: 100%; /* Allow full width */
+    margin: 0;
+    padding: 0;
+}
+
+.content-section {
+    width: 100%; /* Full width for content */
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.gray-section {
+    background-color: #F0EDEA;
+    padding: 0;
+}
+
+.white-section {
+    background-color: #ffffff;
+    padding: 0;
+}
+
+.welcome-box {
+    background-color: #F0EDEA;
+    padding: 20px;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Event Cards */
+.event-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #fff;
+}
+
+.event-card h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.event-card p {
+    margin: 5px 0;
+    color: #555;
+}
+
+/* Footer */
+#footer {
+	width: 100%; /* Make footer span the entire width */
+    margin: 0 auto;
+    padding: 15px;
+    text-align: center;
+    padding: 15px;
+    background-color: #7CDDEE;
+    color: #333;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: #777;
+}
+
+.margin-auto {
+    margin: auto;
+}
+
+/*Slide switch*/
+.switch {
+        position: relative;
+        display: inline-block;
+        width: 34px;
+        height: 20px;
+        margin-left: 10px;
+    }
+
+.switch input {
+	display: none;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.4s;
+	border-radius: 34px;
+}
+
+.slider::before {
+	position: absolute;
+	content: "";
+	height: 14px;
+	width: 14px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.4s;
+	border-radius: 50%;
+}
+
+input:checked + .slider {
+	background-color: #7CDDEE;
+}
+
+input:checked + .slider::before {
+	transform: translateX(14px);
+}
+
+.slider-row label {
+	vertical-align: middle; /* Ensure label text aligns with slider */
+}
+
+/* Chat active highlights*/
+.chat-list-group-item.active a {
+    color: white !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar-nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .navbar-nav .nav-item {
+        margin: 5px 0;
+    }
+
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .event-card {
+        padding: 15px;
+    }
+}

@@ -621,7 +621,12 @@ def events_view(request):
             with connection.cursor() as cursor:
                 # Query for upcoming events
                 cursor.execute("""
-                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date, count(ee.profiles_vol_id) as pending_approval_cnt
+                    SELECT e.event_id, 
+                           e.event_name, 
+                           e.event_zip, 
+                           e.event_date,
+                           (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id,
+                           count(ee.profiles_vol_id) as pending_approval_cnt
                       FROM uni_project.events e
                     LEFT JOIN uni_project.event_enrollment ee
                       on (e.event_id = ee.event_id
@@ -636,11 +641,15 @@ def events_view(request):
 
                 # Query for past events
                 cursor.execute("""
-                    SELECT event_id, event_name, event_zip, event_date 
-                    FROM uni_project.events 
-                    WHERE TRUNC(event_date) < TRUNC(SYSDATE) 
-                      AND profiles_org_id = %s
-                    ORDER BY event_date DESC
+                    SELECT e.event_id, 
+                           e.event_name, 
+                           e.event_zip, 
+                           e.event_date, 
+                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
+                    FROM uni_project.events e
+                    WHERE TRUNC(e.event_date) < TRUNC(SYSDATE) 
+                      AND e.profiles_org_id = %s
+                    ORDER BY e.event_date DESC
                 """, [org_profile.profiles_org_id])
                 past_events = cursor.fetchall()
     else:
@@ -654,7 +663,11 @@ def events_view(request):
             with connection.cursor() as cursor:
                 # Query for upcoming events
                 cursor.execute("""
-                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date
+                    SELECT e.event_id, 
+                           e.event_name, 
+                           e.event_zip, 
+                           e.event_date, 
+                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
                     FROM uni_project.events e
                     JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) >= TRUNC(SYSDATE)
@@ -666,7 +679,11 @@ def events_view(request):
 
                 # Query for past events
                 cursor.execute("""
-                    SELECT e.event_id, e.event_name, e.event_zip, e.event_date
+                    SELECT e.event_id, 
+                           e.event_name, 
+                           e.event_zip, 
+                           e.event_date, 
+                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
                     FROM uni_project.events e
                     JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) < TRUNC(SYSDATE)
@@ -1420,17 +1437,29 @@ def event_recommend(request, event_id):
 
 @login_required
 def chat_view(request, room_id=None):
-    # Retrieve all chat rooms (ordered by their primary key)
-    rooms = EventChat.objects.all().order_by('chat_id')
-    
+    # Restrict chat rooms based on user type:
+    if request.user.extension.is_org:
+        org_profile = ProfilesOrg.objects.filter(user=request.user).first()
+        if org_profile:
+            rooms = EventChat.objects.filter(event_id__profiles_org_id=org_profile).order_by('-event_id__event_date')
+        else:
+            rooms = EventChat.objects.none()
+    else:
+        volunteer_profile = ProfilesVolunteer.objects.filter(user=request.user).first()
+        if volunteer_profile:
+            enrolled_event_ids = EventEnrollment.objects.filter(
+                profiles_vol_id=volunteer_profile.profiles_vol_id,
+                is_accepted='Y'
+            ).values_list('event_id', flat=True)
+            rooms = EventChat.objects.filter(event_id__in=enrolled_event_ids).order_by('-event_id__event_date')
+        else:
+            rooms = EventChat.objects.none()
+
     if room_id is None:
         if rooms.exists():
-            # Use the primary key (numeric value) of the first available chat room
             default_room_id = rooms.first().chat_id
-            # Redirect using the parameter name "room_id"
             return redirect('chat_room', room_id=default_room_id)
         else:
-            # No chat rooms exist – render with empty context
             context = {
                 'rooms': rooms,
                 'active_chat_id': None,
@@ -1438,8 +1467,22 @@ def chat_view(request, room_id=None):
             }
             return render(request, 'chat.html', context)
     else:
-        # A specific chat room is selected.
-        active_chat = get_object_or_404(EventChat, chat_id=room_id)
+        try:
+            # Try to get the chat room from the allowed set.
+            active_chat = rooms.get(chat_id=room_id)
+        except EventChat.DoesNotExist:
+            # If the provided room_id is not allowed, fall back to the default room if available.
+            if rooms.exists():
+                default_room_id = rooms.first().chat_id
+                return redirect('chat_room', room_id=default_room_id)
+            else:
+                context = {
+                    'rooms': rooms,
+                    'active_chat_id': None,
+                    'chat_history': [],
+                }
+                return render(request, 'chat.html', context)
+
         chat_history = EventChatHistory.objects.filter(chat_id=active_chat).order_by('sent_at')
         context = {
             'rooms': rooms,

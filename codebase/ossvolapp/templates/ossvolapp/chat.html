@@ -10,13 +10,13 @@
       <h3>Chat Rooms</h3>
       <ul class="list-group" id="room-list">
         {% for room in rooms %}
-          <li class="list-group-item {% if room.chat_id == active_chat_id %}active{% endif %}">
+          <li class="chat-list-group-item {% if room.chat_id == active_chat_id %}active{% endif %}">
 			  <a href="{% url 'chat_room' room_id=room.chat_id %}">
-				Event: {{ room.event_id.event_name }}
+				{{ room.event_id.event_name }} - {{ room.event_id.event_date|date:"d/m/Y" }}
 			  </a>
  		  </li>
         {% empty %}
-          <li class="list-group-item">No chat rooms available.</li>
+          <li class="chat-list-group-item">No chat rooms available.</li>
         {% endfor %}
       </ul>
       {# Room creation is not allowed – remove the following link #}
@@ -27,7 +27,7 @@
     <div class="col-md-9">
       {% if active_chat_id %}
         <h3>Chat - Event: {{ active_chat_id }}</h3>
-        <div id="chat-log" style="height:400px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
+        <div id="chat-log">
           {% for chat in chat_history %}
             <div class="chat-message mb-3">
               <div class="chat-message-header">

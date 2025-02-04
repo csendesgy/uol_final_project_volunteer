@@ -202,6 +202,31 @@ input:checked + .slider::before {
 	vertical-align: middle; /* Ensure label text aligns with slider */
 }
 
+/* Chat active highlights*/
+.chat-list-group-item.active a {
+	background-color: #7CDDEE;
+    color: #000000;
+	display: block;
+    padding: 10px;
+}
+
+#chat-log {
+    height:300px; /* ~5 bubbles are visible */
+    overflow-y:auto; 
+    border:1px solid #ccc; 
+    padding:10px;
+}
+
+.chat-message {
+    background-color: #f1f0f0;
+    border-radius: 15px;
+    padding: 10px 15px;
+    margin: 10px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-width: 75%;
+    clear: both;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .navbar-nav {
