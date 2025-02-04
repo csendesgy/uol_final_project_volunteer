@@ -275,12 +275,31 @@ events.html
 home.html
 index.html
 
+02/02/2025
+#Chat
+#modify create event to also insert into event_chat
+views.py
+#fixing bug for adding new skills and languages as it was broken
+views.py #create_edit_event
+#install redis on oracle linux + pip install redis==5.0.8 daphne==3.0.2 channels==3.0.4 channels-redis==4.2.0
+settings.py
+chat.html
+asgi.py
+ossvolsite/routing.py
+consumers.py
+ossvolapp/routing.py
+urls.py
+header.html
 
-
-
-
-
-
+02/03/2025
+# run redis server, probably need to send it to nohup
+redis-server 
+# run daphne 
+export DJANGO_SETTINGS_MODULE=ossvolsite.settings
+daphne -p 8001 ossvolsite.asgi:application
+consumers.py
+ossvolapp/routing.py
+chat.html
 
 
 

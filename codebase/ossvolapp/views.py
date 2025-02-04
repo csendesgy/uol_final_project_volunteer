@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -830,6 +830,12 @@ def create_edit_event(request):
                         ])
                         event_id = cursor.fetchone()[0]
 
+                        #Add it to the chat
+                        insert_chat_query = """
+                            INSERT INTO uni_project.event_chat (event_id) VALUES (:1)
+                        """
+                        cursor.execute(insert_chat_query, [event_id])
+
                     connection.commit()
 
                     # Handle skills
@@ -852,7 +858,7 @@ def create_edit_event(request):
                             """
                             skill_id_var = cursor.var(cx_Oracle.NUMBER)
                             cursor.execute(insert_skill_query, [skill_name.title(), skill_id_var])
-                            skill_id = skill_id_var.getvalue(0)
+                            skill_id = skill_id_var.getvalue()[0]
                         else:
                             skill_id = skill_row[0]
 
@@ -883,7 +889,7 @@ def create_edit_event(request):
                             """
                             lang_id_var = cursor.var(cx_Oracle.NUMBER)
                             cursor.execute(insert_language_query, [lang_name.title(), lang_id_var])
-                            language_id = lang_id_var.getvalue(0)
+                            language_id = lang_id_var.getvalue()[0]
                         else:
                             language_id = lang_row[0]
 
@@ -1411,3 +1417,33 @@ def event_recommend(request, event_id):
         'pending_volunteers': pending_volunteers,
         #'recommendation_msg': recommendation.recommendation_msg,  
     })
+
+@login_required
+def chat_view(request, room_id=None):
+    # Retrieve all chat rooms (ordered by their primary key)
+    rooms = EventChat.objects.all().order_by('chat_id')
+    
+    if room_id is None:
+        if rooms.exists():
+            # Use the primary key (numeric value) of the first available chat room
+            default_room_id = rooms.first().chat_id
+            # Redirect using the parameter name "room_id"
+            return redirect('chat_room', room_id=default_room_id)
+        else:
+            # No chat rooms exist – render with empty context
+            context = {
+                'rooms': rooms,
+                'active_chat_id': None,
+                'chat_history': [],
+            }
+            return render(request, 'chat.html', context)
+    else:
+        # A specific chat room is selected.
+        active_chat = get_object_or_404(EventChat, chat_id=room_id)
+        chat_history = EventChatHistory.objects.filter(chat_id=active_chat).order_by('sent_at')
+        context = {
+            'rooms': rooms,
+            'active_chat_id': room_id,
+            'chat_history': chat_history,
+        }
+        return render(request, 'chat.html', context)

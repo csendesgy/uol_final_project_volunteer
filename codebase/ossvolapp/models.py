@@ -151,7 +151,6 @@ class Recommendation(models.Model):
 class EventChat(models.Model):
     chat_id = models.BigAutoField(primary_key=True)
     event_id = models.ForeignKey('Event', on_delete=models.CASCADE, db_column='event_id', related_name='chats')
-    event_chat_name = models.CharField(max_length=100)
 
     class Meta:
         db_table = "event_chat"

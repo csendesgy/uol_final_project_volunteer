@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <!-- Left Column: Chat Rooms List -->
+    <div class="col-md-3">
+      <h3>Chat Rooms</h3>
+      <ul class="list-group" id="room-list">
+        {% for room in rooms %}
+          <li class="list-group-item {% if room.chat_id == active_chat_id %}active{% endif %}">
+			  <a href="{% url 'chat_room' room_id=room.chat_id %}">
+				Event: {{ room.event_id.event_name }}
+			  </a>
+ 		  </li>
+        {% empty %}
+          <li class="list-group-item">No chat rooms available.</li>
+        {% endfor %}
+      </ul>
+      {# Room creation is not allowed – remove the following link #}
+      {# <a href="{% url 'create_room' %}" class="btn btn-primary mt-2">Create New Room</a> #}
+    </div>
+    
+    <!-- Right Column: Chat Window -->
+    <div class="col-md-9">
+      {% if active_chat_id %}
+        <h3>Chat - Event: {{ active_chat_id }}</h3>
+        <div id="chat-log" style="height:400px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
+          {% for chat in chat_history %}
+            <div class="chat-message mb-3">
+              <div class="chat-message-header">
+                {% if chat.from_org_id %}
+                  <strong>{{ chat.from_org_id.org_name }}</strong>
+                {% else %}
+                  <strong>{{ chat.from_vol_id.user.first_name }} {{ chat.from_vol_id.user.last_name }}</strong>
+                {% endif %}
+                <small class="text-muted">{{ chat.sent_at|date:"M d, Y, g:i a" }}</small>
+              </div>
+              <div class="chat-text">
+                {{ chat.msg }}
+              </div>
+            </div>
+          {% empty %}
+            <p>No messages yet.</p>
+          {% endfor %}
+        </div>
+        <div class="input-group mt-3">
+          <input type="text" id="chat-message-input" class="form-control" placeholder="Type your message here...">
+          <div class="input-group-append">
+            <button id="chat-message-submit" class="btn btn-success" type="button">Send</button>
+          </div>
+        </div>
+      {% else %}
+        <h3>Please select a chat room.</h3>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // Scroll to the bottom of the chat log on load.
+  function scrollToBottom() {
+    const chatLog = document.getElementById("chat-log");
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+  window.onload = function() {
+    setTimeout(scrollToBottom, 200);
+  };
+
+  // Set up the WebSocket connection using the active chat room id.
+  const roomId = "{{ active_chat_id }}";
+  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const chatSocket = new WebSocket(wsScheme + "://" + window.location.host + "/ws/chat/" + roomId + "/");
+
+  chatSocket.onopen = function(e) {
+    console.log("WebSocket connected for room", roomId);
+  };
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    console.log("Received data from server:", data);
+    const chatLog = document.getElementById("chat-log");
+    const newMessage = document.createElement("div");
+    newMessage.classList.add("chat-message", "mb-3");
+
+    // Use keys as provided by the consumer: 'sender', 'timestamp', and 'msg'.
+    const headerDiv = document.createElement("div");
+    headerDiv.classList.add("chat-message-header");
+    headerDiv.innerHTML = `<span class="chat-username"><strong>${data.sender}</strong></span> 
+                           <span class="chat-time">${data.timestamp}</span>`;
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("chat-text");
+    messageDiv.textContent = data.msg;
+
+    newMessage.appendChild(headerDiv);
+    newMessage.appendChild(messageDiv);
+    chatLog.appendChild(newMessage);
+    scrollToBottom();
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error("Chat socket closed unexpectedly");
+  };
+
+  // Focus input and allow Enter key to send messages.
+  const inputElem = document.getElementById("chat-message-input");
+  const submitButton = document.getElementById("chat-message-submit");
+  inputElem.focus();
+  inputElem.onkeyup = function(e) {
+    if (e.keyCode === 13) {
+      submitButton.click();
+    }
+  };
+
+  submitButton.onclick = function(e) {
+    const message = inputElem.value;
+    console.log("Button clicked, message:", message);
+    if (message.trim() === "") return;
+    if (chatSocket.readyState === WebSocket.OPEN) {
+      // Send message payload with key "msg"
+      chatSocket.send(JSON.stringify({
+        "msg": message
+      }));
+      console.log("Sent message:", message);
+    } else {
+      console.error("WebSocket is not open.");
+    }
+    inputElem.value = "";
+  };
+</script>
+
+{% endblock %}
