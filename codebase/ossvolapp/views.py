@@ -222,7 +222,7 @@ def register_view(request):
                         upper_language=Upper('language')
                     ).filter(upper_language=native_language_name.upper()).first()
 
-                    # Step 2: If not found, insert the language with properly capitalized words
+                    # If not found, insert the language with properly capitalized words
                     if not native_language:
                         new_language = Language.objects.create(
                             language=capitalize_words(native_language_name)
@@ -625,10 +625,10 @@ def events_view(request):
                            e.event_name, 
                            e.event_zip, 
                            e.event_date,
-                           (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id,
+                           (SELECT ec.chat_id FROM event_chat ec WHERE ec.event_id = e.event_id) as chat_id,
                            count(ee.profiles_vol_id) as pending_approval_cnt
-                      FROM uni_project.events e
-                    LEFT JOIN uni_project.event_enrollment ee
+                      FROM events e
+                    LEFT JOIN event_enrollment ee
                       on (e.event_id = ee.event_id
                       and nvl(ee.is_rejected,'N') = 'N' 
                       and nvl(ee.is_accepted,'N') = 'N')
@@ -645,8 +645,8 @@ def events_view(request):
                            e.event_name, 
                            e.event_zip, 
                            e.event_date, 
-                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
-                    FROM uni_project.events e
+                          (SELECT ec.chat_id FROM event_chat ec WHERE ec.event_id = e.event_id) as chat_id
+                    FROM events e
                     WHERE TRUNC(e.event_date) < TRUNC(SYSDATE) 
                       AND e.profiles_org_id = %s
                     ORDER BY e.event_date DESC
@@ -667,9 +667,9 @@ def events_view(request):
                            e.event_name, 
                            e.event_zip, 
                            e.event_date, 
-                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
-                    FROM uni_project.events e
-                    JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
+                          (SELECT ec.chat_id FROM event_chat ec WHERE ec.event_id = e.event_id) as chat_id
+                    FROM events e
+                    JOIN event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) >= TRUNC(SYSDATE)
                       AND ee.is_accepted = 'Y'
                       AND ee.profiles_vol_id = %s
@@ -683,9 +683,9 @@ def events_view(request):
                            e.event_name, 
                            e.event_zip, 
                            e.event_date, 
-                          (SELECT ec.chat_id FROM uni_project.event_chat ec WHERE ec.event_id = e.event_id) as chat_id
-                    FROM uni_project.events e
-                    JOIN uni_project.event_enrollment ee ON e.event_id = ee.event_id
+                          (SELECT ec.chat_id FROM event_chat ec WHERE ec.event_id = e.event_id) as chat_id
+                    FROM events e
+                    JOIN event_enrollment ee ON e.event_id = ee.event_id
                     WHERE TRUNC(e.event_date) < TRUNC(SYSDATE)
                       AND ee.is_accepted = 'Y'
                       AND ee.profiles_vol_id = %s
@@ -736,7 +736,7 @@ def create_edit_event(request):
                     # Fetch event details for editing
                     fetch_event_query = """
                         SELECT event_name, event_zip, event_date, event_description, application_deadline
-                        FROM uni_project.events
+                        FROM events
                         WHERE event_id = :1 AND profiles_org_id = :2
                     """
                     cursor.execute(fetch_event_query, [event_id, org_profile.profiles_org_id])
@@ -755,7 +755,7 @@ def create_edit_event(request):
                     # get the image
                     fetch_image_query = """
                             SELECT event_image
-                            FROM uni_project.events
+                            FROM events
                             WHERE event_id = :1
                         """
                     cursor.execute(fetch_image_query, [event_id])
@@ -791,7 +791,7 @@ def create_edit_event(request):
                     if is_edit:
                         # Update existing event
                         update_query = """
-                            UPDATE uni_project.events
+                            UPDATE events
                             SET event_name = :1,
                                 event_zip = :2,
                                 event_date = TO_DATE(:3, 'YYYY-MM-DD'),
@@ -814,7 +814,7 @@ def create_edit_event(request):
                     else:
                         # Insert new event
                         insert_query = """
-                            INSERT INTO uni_project.events
+                            INSERT INTO events
                             (event_name, event_zip, event_date, event_description, application_deadline, event_image, profiles_org_id)
                             VALUES (:1, :2, TO_DATE(:3, 'YYYY-MM-DD'), :4, TO_DATE(:5, 'YYYY-MM-DD'), :6, :7)
                         """
@@ -831,7 +831,7 @@ def create_edit_event(request):
                         # Fetch the event_id for the new event
                         event_id_query = """
                             SELECT event_id
-                            FROM uni_project.events
+                            FROM events
                             WHERE profiles_org_id = :1
                               AND event_name = :2
                               AND event_zip = :3
@@ -849,7 +849,7 @@ def create_edit_event(request):
 
                         #Add it to the chat
                         insert_chat_query = """
-                            INSERT INTO uni_project.event_chat (event_id) VALUES (:1)
+                            INSERT INTO event_chat (event_id) VALUES (:1)
                         """
                         cursor.execute(insert_chat_query, [event_id])
 
@@ -978,14 +978,14 @@ def event_page(request, event_id):
                             e.event_id,
                             COUNT(DISTINCT CASE WHEN er.is_accepted = 'Y' THEN er.profiles_vol_id END) AS no_of_attendees,
                             o.profiles_org_id
-                        FROM uni_project.events e
-                        JOIN uni_project.profiles_org o ON e.profiles_org_id = o.profiles_org_id
-                        LEFT JOIN uni_project.event_skills es ON e.event_id = es.event_id
-                        LEFT JOIN uni_project.skills sk ON es.skill_id = sk.skill_id
-                        LEFT JOIN uni_project.event_translate_language el ON e.event_id = el.event_id
-                        LEFT JOIN uni_project.languages l ON el.target_language_id = l.language_id
-                        LEFT JOIN uni_project.languages_level ll ON el.required_language_level_id = ll.languages_level_id
-                        LEFT JOIN uni_project.event_enrollment er ON (e.event_id = er.event_id AND er.is_accepted = 'Y')
+                        FROM events e
+                        JOIN profiles_org o ON e.profiles_org_id = o.profiles_org_id
+                        LEFT JOIN event_skills es ON e.event_id = es.event_id
+                        LEFT JOIN skills sk ON es.skill_id = sk.skill_id
+                        LEFT JOIN event_translate_language el ON e.event_id = el.event_id
+                        LEFT JOIN languages l ON el.target_language_id = l.language_id
+                        LEFT JOIN languages_level ll ON el.required_language_level_id = ll.languages_level_id
+                        LEFT JOIN event_enrollment er ON (e.event_id = er.event_id AND er.is_accepted = 'Y')
                         WHERE e.event_id = :1
                         GROUP BY
                             e.event_name,
@@ -1013,7 +1013,7 @@ def event_page(request, event_id):
                         ad.no_of_attendees,
                         ad.profiles_org_id
                     FROM aggregated_data ad
-                    JOIN uni_project.events e ON ad.event_id = e.event_id
+                    JOIN events e ON ad.event_id = e.event_id
                 """, [event_id])
                 row = cursor.fetchone()
                 if row:
@@ -1065,7 +1065,7 @@ def event_page(request, event_id):
                             if action == 'accept':
                                 # Update to accept the volunteer
                                 cursor.execute("""
-                                    UPDATE uni_project.event_enrollment
+                                    UPDATE event_enrollment
                                     SET is_accepted = 'Y',
                                         accepted_at = SYSDATE,
                                         is_rejected = 'N',
@@ -1078,7 +1078,7 @@ def event_page(request, event_id):
                             elif action == 'pending':
                                 # Update to reset the status to pending
                                 cursor.execute("""
-                                    UPDATE uni_project.event_enrollment
+                                    UPDATE event_enrollment
                                     SET is_accepted = NULL,
                                         accepted_at = NULL,
                                         is_rejected = NULL,
@@ -1090,7 +1090,7 @@ def event_page(request, event_id):
 
                             elif action == 'reject' and reject_reason.strip():
                                 query = f"""
-                                        UPDATE uni_project.event_enrollment
+                                        UPDATE event_enrollment
                                         SET is_accepted = NULL,
                                             accepted_at = NULL,
                                             is_rejected = 'Y',
@@ -1112,9 +1112,9 @@ def event_page(request, event_id):
                     # Accepted volunteers
                     cursor.execute("""
                         SELECT au.first_name, au.last_name, au.email, et.last_updated_at, et.profiles_vol_id
-                        FROM uni_project.event_enrollment et
-                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
-                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        FROM event_enrollment et
+                        JOIN profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN auth_user au ON pv.user_id = au.id
                         WHERE et.event_id = :1 AND NVL(et.is_accepted, 'N') = 'Y'
                     """, [event_id])
                     accepted_volunteers = cursor.fetchall()
@@ -1122,9 +1122,9 @@ def event_page(request, event_id):
                     # Pending volunteers
                     cursor.execute("""
                         SELECT au.first_name, au.last_name, au.email, et.last_updated_at, et.profiles_vol_id
-                        FROM uni_project.event_enrollment et
-                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
-                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        FROM event_enrollment et
+                        JOIN profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN auth_user au ON pv.user_id = au.id
                         WHERE et.event_id = :1 AND NVL(et.is_accepted, 'N') = 'N' AND NVL(et.is_rejected, 'N') = 'N'
                     """, [event_id])
                     pending_volunteers = cursor.fetchall()
@@ -1132,9 +1132,9 @@ def event_page(request, event_id):
                     # Rejected volunteers
                     cursor.execute("""
                         SELECT au.first_name, au.last_name, au.email, et.rejected_at, et.reject_reason, et.last_updated_at, et.profiles_vol_id
-                        FROM uni_project.event_enrollment et
-                        JOIN uni_project.profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
-                        JOIN uni_project.auth_user au ON pv.user_id = au.id
+                        FROM event_enrollment et
+                        JOIN profiles_volunteer pv ON et.profiles_vol_id = pv.profiles_vol_id
+                        JOIN auth_user au ON pv.user_id = au.id
                         WHERE et.event_id = :1 AND NVL(et.is_rejected, 'N') = 'Y'
                     """, [event_id])
                     rejected_volunteers = cursor.fetchall()

@@ -5,7 +5,7 @@
     <form method="get" action="{% url 'find_event' %}">
         <div class="row mb-3">
             <div class="col-md-2">
-                <input type="text" name="zip_code" class="form-control" placeholder="Zip Code">
+				<input type="text" name="zip_code" class="form-control" placeholder="Zip Code" pattern="^\d{5}$" title="Enter a valid 5-digit ZIP code">
             </div>
             <div class="col-md-2">
                 <input type="number" name="distance" class="form-control" placeholder="Distance (miles)">

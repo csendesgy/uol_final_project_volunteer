@@ -25,14 +25,14 @@ class EventAPIView(APIView):
                             LISTAGG(DISTINCT l.language || ' - ' || ll.languages_level, '; ') WITHIN GROUP (ORDER BY l.language) AS languages,
                             e.event_id,
                             COUNT(DISTINCT CASE WHEN er.is_accepted = 'Y' THEN er.profiles_vol_id END) AS no_of_attendees
-                        FROM uni_project.events e
-                        JOIN uni_project.profiles_org o ON e.profiles_org_id = o.profiles_org_id
-                        LEFT JOIN uni_project.event_skills es ON e.event_id = es.event_id
-                        LEFT JOIN uni_project.skills sk ON es.skill_id = sk.skill_id
-                        LEFT JOIN uni_project.event_translate_language el ON e.event_id = el.event_id
-                        LEFT JOIN uni_project.languages l ON el.target_language_id = l.language_id
-                        LEFT JOIN uni_project.languages_level ll ON el.required_language_level_id = ll.languages_level_id
-                        LEFT JOIN uni_project.event_enrollment er ON (e.event_id = er.event_id AND er.is_accepted = 'Y')
+                        FROM events e
+                        JOIN profiles_org o ON e.profiles_org_id = o.profiles_org_id
+                        LEFT JOIN event_skills es ON e.event_id = es.event_id
+                        LEFT JOIN skills sk ON es.skill_id = sk.skill_id
+                        LEFT JOIN event_translate_language el ON e.event_id = el.event_id
+                        LEFT JOIN languages l ON el.target_language_id = l.language_id
+                        LEFT JOIN languages_level ll ON el.required_language_level_id = ll.languages_level_id
+                        LEFT JOIN event_enrollment er ON (e.event_id = er.event_id AND er.is_accepted = 'Y')
                         WHERE e.event_id = :event_id
                         GROUP BY
                             e.event_name,
@@ -58,7 +58,7 @@ class EventAPIView(APIView):
                         END AS languages,
                         ad.no_of_attendees
                     FROM aggregated_data ad
-                    --JOIN uni_project.events e ON ad.event_id = e.event_id
+                    --JOIN events e ON ad.event_id = e.event_id
                 """
                 cursor.execute(query, {'event_id': event_id})
                 row = cursor.fetchone()

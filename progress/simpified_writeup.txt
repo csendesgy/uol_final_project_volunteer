@@ -291,7 +291,7 @@ ossvolapp/routing.py
 urls.py
 header.html
 
-02/03/2025
+03/02/2025
 # run redis server, probably need to send it to nohup
 redis-server 
 # run daphne 
@@ -301,5 +301,40 @@ consumers.py
 ossvolapp/routing.py
 chat.html
 
+04/02/2025
+#restrict chat
+views.py
+# styling
+ossvol.css
+chat.html
+# fix go to event chat
+views.py
+events.html
+
+11/02/2025
+# restricting ZIP input fields
+create_edit_event.html
+find_event.html
 
 
+nohup redis-server > redis.log 2>&1 &
+export DJANGO_SETTINGS_MODULE=ossvolsite.settings
+nohup daphne -p 8001 ossvolsite.asgi:application > daphne.log 2>&1 &
+
+13/02/2025
+# add test cases
+test.py
+# errors out, need specific test user in DB
+created UNI_PROJECT_TEST
+settings.py # add the test user connect
+# still errors out trying to create the user.
+
+14/02/2025
+test_runner.py # forcing tester to skip user creation
+settings.py # pointing the tester to the skip part
+
+17/02/2025
+# cleare schemas from views.py as test.py uses another schema to separate objects
+views.py
+#add more test cases and fix existing ones.
+test.py
