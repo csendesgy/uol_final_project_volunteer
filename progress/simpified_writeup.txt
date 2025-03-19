@@ -338,3 +338,13 @@ settings.py # pointing the tester to the skip part
 views.py
 #add more test cases and fix existing ones.
 test.py
+
+24/02/2025
+# I reused a private web address of mine so that a proper certbot certification can work.
+nginx config file change
+settings.py
+#also proper background process for gunicorn
+gunicorn --workers 3 --daemon ossvolsite.wsgi:application
+
+25/02/2025
+Fixing the footer language.
